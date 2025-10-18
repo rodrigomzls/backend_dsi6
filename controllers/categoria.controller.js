@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 //hdghagsdagshdcavhvahba
+//lsdnfmdsnfkj
 export const getCategorias = async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM categorias");

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 15-10-2025 a las 21:03:42
+-- Tiempo de generación: 18-10-2025 a las 22:19:23
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -49,11 +49,9 @@ INSERT INTO `categorias` (`id_categoria`, `nombre`) VALUES
 
 CREATE TABLE `cliente` (
   `id_cliente` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `direccion` varchar(200) DEFAULT NULL,
-  `id_distrito` int(11) DEFAULT NULL,
-  `tipo_cliente` enum('Bodega','Restaurante','Gimnasio','Final') NOT NULL,
+  `id_persona` int(11) NOT NULL,
+  `tipo_cliente` enum('Bodega','Restaurante','Gimnasio','Final','Empresa') NOT NULL,
+  `razon_social` varchar(200) DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -62,11 +60,10 @@ CREATE TABLE `cliente` (
 -- Volcado de datos para la tabla `cliente`
 --
 
-INSERT INTO `cliente` (`id_cliente`, `nombre`, `telefono`, `direccion`, `id_distrito`, `tipo_cliente`, `activo`, `fecha_registro`) VALUES
-(1, 'Bodega El Sol', '987654321', 'Av. Principal 123', 1, 'Bodega', 1, '2025-10-15 16:36:49'),
-(2, 'Restaurante La Luna', '987654322', 'Calle Comercio 456', 2, 'Restaurante', 1, '2025-10-15 16:36:49'),
-(3, 'Gimnasio Fitness Center', '987654323', 'Jr. Deportes 789', 3, 'Gimnasio', 1, '2025-10-15 16:36:49'),
-(4, 'Cliente Final Juan', '987654324', 'Av. Residencial 321', 4, 'Final', 1, '2025-10-15 16:36:49');
+INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social`, `activo`, `fecha_registro`) VALUES
+(1, 7, 'Bodega', 'Bodega Don Pepe', 1, '2025-10-18 20:18:44'),
+(2, 8, 'Restaurante', 'Restaurante La Olla', 1, '2025-10-18 20:18:44'),
+(3, 9, 'Gimnasio', 'Gimnasio Power Fit', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -179,10 +176,10 @@ CREATE TABLE `lote_producto` (
 --
 
 INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_caducidad`, `cantidad_inicial`, `cantidad_actual`, `fecha_creacion`, `activo`) VALUES
-(1, 1, 'LOTE-001-2024', '2024-12-31', 100, 100, '2025-10-14 23:36:00', 1),
-(2, 2, 'LOTE-002-2024', '2024-12-31', 80, 80, '2025-10-14 23:36:00', 1),
-(3, 3, 'LOTE-003-2024', '2024-06-30', 200, 200, '2025-10-14 23:36:00', 1),
-(4, 4, 'LOTE-004-2024', '2024-06-30', 150, 150, '2025-10-14 23:36:00', 1);
+(1, 1, 'LOTE-001-2024', '2024-12-31', 100, 100, '2025-10-18 20:18:44', 1),
+(2, 2, 'LOTE-002-2024', '2024-12-31', 80, 80, '2025-10-18 20:18:44', 1),
+(3, 3, 'LOTE-003-2024', '2024-06-30', 200, 200, '2025-10-18 20:18:44', 1),
+(4, 4, 'LOTE-004-2024', '2024-06-30', 150, 150, '2025-10-18 20:18:44', 1);
 
 -- --------------------------------------------------------
 
@@ -266,6 +263,38 @@ CREATE TABLE `pedido_proveedor` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `persona`
+--
+
+CREATE TABLE `persona` (
+  `id_persona` int(11) NOT NULL,
+  `tipo_documento` enum('DNI','RUC','CE') NOT NULL,
+  `numero_documento` varchar(20) NOT NULL,
+  `nombre_completo` varchar(200) NOT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `direccion` varchar(200) DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `persona`
+--
+
+INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nombre_completo`, `telefono`, `direccion`, `activo`, `fecha_registro`) VALUES
+(1, 'DNI', '70123456', 'Juan Pérez', '999888777', 'Av. Principal 123', 1, '2025-10-18 20:18:44'),
+(2, 'DNI', '70876543', 'María García', '999888666', 'Calle Los Pinos 456', 1, '2025-10-18 20:18:44'),
+(3, 'DNI', '71234567', 'Carlos López', '999888555', 'Jr. Union 789', 1, '2025-10-18 20:18:44'),
+(4, 'RUC', '20123456789', 'Proveedor Agua Pura SAC', '988777666', 'Av. Industrial 123', 1, '2025-10-18 20:18:44'),
+(5, 'RUC', '20123456788', 'Insumos Beverage Perú', '988777555', 'Calle Los Olivos 456', 1, '2025-10-18 20:18:44'),
+(6, 'DNI', '70000001', 'Administrador Sistema', '999999999', 'Dirección Admin', 1, '2025-10-18 20:18:44'),
+(7, 'DNI', '71111111', 'Bodega Don Pepe', '911111111', 'Av. Mercado 111', 1, '2025-10-18 20:18:44'),
+(8, 'RUC', '20111111111', 'Restaurante La Olla', '922222222', 'Calle Comida 222', 1, '2025-10-18 20:18:44'),
+(9, 'DNI', '72222222', 'Gimnasio Power Fit', '933333333', 'Jr. Deportes 333', 1, '2025-10-18 20:18:44');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `producto`
 --
 
@@ -291,12 +320,10 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 8.50, 100, 20, 1, 1, 'botella', 1, '2025-10-14 23:36:00'),
-(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 12.00, 80, 15, 1, 1, 'botella', 1, '2025-10-14 23:36:00'),
-(3, 'Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 1.50, 200, 50, 1, 1, 'botella', 1, '2025-10-14 23:36:00'),
-(4, 'Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 2.50, 150, 30, 1, 1, 'botella', 1, '2025-10-14 23:36:00'),
-(6, 'agua premiun', 2, 2, NULL, NULL, 1.50, 23, 0, 2, 1, 'agua con gas', 1, '2025-10-15 14:41:54'),
-(7, 'cbacv', 1, 1, NULL, NULL, 2.00, 23, 0, 1, 1, 'casf', 1, '2025-10-15 18:03:50');
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 8.50, 100, 20, 1, 1, NULL, 1, '2025-10-18 20:18:44'),
+(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 12.00, 80, 15, 1, 1, NULL, 1, '2025-10-18 20:18:44'),
+(3, 'Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 1.50, 200, 50, 1, 1, NULL, 1, '2025-10-18 20:18:44'),
+(4, 'Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 2.50, 150, 30, 1, 1, NULL, 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -306,10 +333,8 @@ INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `pr
 
 CREATE TABLE `proveedor` (
   `id_proveedor` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `direccion` varchar(200) DEFAULT NULL,
-  `id_distrito` int(11) DEFAULT NULL,
+  `id_persona` int(11) NOT NULL,
+  `razon_social` varchar(200) NOT NULL,
   `activo` tinyint(1) DEFAULT 1,
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -318,9 +343,9 @@ CREATE TABLE `proveedor` (
 -- Volcado de datos para la tabla `proveedor`
 --
 
-INSERT INTO `proveedor` (`id_proveedor`, `nombre`, `telefono`, `direccion`, `id_distrito`, `activo`, `fecha_registro`) VALUES
-(1, 'Proveedor Agua Pura SAC', '988777666', 'Av. Industrial 123', 1, 1, '2025-10-14 23:36:00'),
-(2, 'Insumos Beverage Perú', '988777555', 'Calle Los Olivos 456', 2, 1, '2025-10-14 23:36:00');
+INSERT INTO `proveedor` (`id_proveedor`, `id_persona`, `razon_social`, `activo`, `fecha_registro`) VALUES
+(1, 4, 'Proveedor Agua Pura SAC', 1, '2025-10-18 20:18:44'),
+(2, 5, 'Insumos Beverage Perú', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -351,21 +376,21 @@ INSERT INTO `provincia` (`id_provincia`, `provincia`, `id_departamento`) VALUES
 
 CREATE TABLE `repartidor` (
   `id_repartidor` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
+  `id_persona` int(11) NOT NULL,
   `placa_furgon` varchar(20) DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
-  `fecha_contratacion` date DEFAULT NULL
+  `fecha_contratacion` date DEFAULT NULL,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `repartidor`
 --
 
-INSERT INTO `repartidor` (`id_repartidor`, `nombre`, `telefono`, `placa_furgon`, `activo`, `fecha_contratacion`) VALUES
-(1, 'Juan Pérez', '999888777', 'ABC-123', 1, '2024-01-15'),
-(2, 'María García', '999888666', 'DEF-456', 1, '2024-02-01'),
-(3, 'Carlos López', '999888555', 'GHI-789', 1, '2024-01-20');
+INSERT INTO `repartidor` (`id_repartidor`, `id_persona`, `placa_furgon`, `activo`, `fecha_contratacion`, `fecha_creacion`) VALUES
+(1, 1, 'ABC-123', 1, '2024-01-15', '2025-10-18 20:18:44'),
+(2, 2, 'DEF-456', 1, '2024-02-01', '2025-10-18 20:18:44'),
+(3, 3, 'GHI-789', 1, '2024-01-20', '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -397,18 +422,24 @@ INSERT INTO `rol` (`id_rol`, `rol`) VALUES
 CREATE TABLE `usuario` (
   `id_usuario` int(11) NOT NULL,
   `nombre_usuario` varchar(100) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
   `contraseña` varchar(255) NOT NULL,
   `id_rol` int(11) NOT NULL,
+  `id_persona` int(11) NOT NULL,
+  `token_recuperacion` varchar(255) DEFAULT NULL,
+  `fecha_expiracion_token` timestamp NULL DEFAULT NULL,
+  `ultimo_acceso` timestamp NULL DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
-  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp()
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `usuario`
 --
 
-INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `contraseña`, `id_rol`, `activo`, `fecha_creacion`) VALUES
-(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 1, '2025-10-14 23:36:00');
+INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `contraseña`, `id_rol`, `id_persona`, `token_recuperacion`, `fecha_expiracion_token`, `ultimo_acceso`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
+(1, 'admin', 'admin@sistemaagua.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 6, NULL, NULL, NULL, 1, '2025-10-18 20:18:44', '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -461,7 +492,10 @@ ALTER TABLE `categorias`
 --
 ALTER TABLE `cliente`
   ADD PRIMARY KEY (`id_cliente`),
-  ADD KEY `idx_cliente_distrito` (`id_distrito`);
+  ADD UNIQUE KEY `uk_cliente_persona` (`id_persona`),
+  ADD KEY `idx_cliente_tipo` (`tipo_cliente`),
+  ADD KEY `idx_cliente_activo` (`activo`),
+  ADD KEY `idx_cliente_distrito` (`id_persona`);
 
 --
 -- Indices de la tabla `departamento`
@@ -520,26 +554,38 @@ ALTER TABLE `pais`
 --
 ALTER TABLE `pedido_proveedor`
   ADD PRIMARY KEY (`id_pedido`),
-  ADD KEY `id_proveedor` (`id_proveedor`),
   ADD KEY `id_producto` (`id_producto`),
-  ADD KEY `id_estado_pedido` (`id_estado_pedido`);
+  ADD KEY `idx_pedido_proveedor` (`id_proveedor`),
+  ADD KEY `idx_pedido_estado` (`id_estado_pedido`),
+  ADD KEY `idx_pedido_fecha` (`fecha`);
+
+--
+-- Indices de la tabla `persona`
+--
+ALTER TABLE `persona`
+  ADD PRIMARY KEY (`id_persona`),
+  ADD UNIQUE KEY `numero_documento` (`numero_documento`),
+  ADD KEY `idx_persona_documento` (`numero_documento`),
+  ADD KEY `idx_persona_nombre` (`nombre_completo`),
+  ADD KEY `idx_persona_activo` (`activo`);
 
 --
 -- Indices de la tabla `producto`
 --
 ALTER TABLE `producto`
   ADD PRIMARY KEY (`id_producto`),
-  ADD KEY `id_proveedor` (`id_proveedor`),
   ADD KEY `id_pais_origen` (`id_pais_origen`),
   ADD KEY `idx_producto_categoria` (`id_categoria`),
-  ADD KEY `idx_producto_marca` (`id_marca`);
+  ADD KEY `idx_producto_marca` (`id_marca`),
+  ADD KEY `idx_producto_proveedor` (`id_proveedor`);
 
 --
 -- Indices de la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
   ADD PRIMARY KEY (`id_proveedor`),
-  ADD KEY `id_distrito` (`id_distrito`);
+  ADD UNIQUE KEY `uk_proveedor_persona` (`id_persona`),
+  ADD KEY `idx_proveedor_activo` (`activo`);
 
 --
 -- Indices de la tabla `provincia`
@@ -552,7 +598,10 @@ ALTER TABLE `provincia`
 -- Indices de la tabla `repartidor`
 --
 ALTER TABLE `repartidor`
-  ADD PRIMARY KEY (`id_repartidor`);
+  ADD PRIMARY KEY (`id_repartidor`),
+  ADD UNIQUE KEY `uk_repartidor_persona` (`id_persona`),
+  ADD KEY `idx_repartidor_activo` (`activo`),
+  ADD KEY `idx_repartidor_contratacion` (`fecha_contratacion`);
 
 --
 -- Indices de la tabla `rol`
@@ -565,7 +614,12 @@ ALTER TABLE `rol`
 --
 ALTER TABLE `usuario`
   ADD PRIMARY KEY (`id_usuario`),
-  ADD KEY `id_rol` (`id_rol`);
+  ADD UNIQUE KEY `nombre_usuario` (`nombre_usuario`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_usuario_rol` (`id_rol`),
+  ADD KEY `idx_usuario_persona` (`id_persona`),
+  ADD KEY `idx_usuario_activo` (`activo`),
+  ADD KEY `idx_usuario_email` (`email`);
 
 --
 -- Indices de la tabla `venta`
@@ -601,7 +655,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -658,10 +712,16 @@ ALTER TABLE `pedido_proveedor`
   MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `persona`
+--
+ALTER TABLE `persona`
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- AUTO_INCREMENT de la tabla `producto`
 --
 ALTER TABLE `producto`
-  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedor`
@@ -713,7 +773,7 @@ ALTER TABLE `venta_detalle`
 -- Filtros para la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  ADD CONSTRAINT `cliente_ibfk_1` FOREIGN KEY (`id_distrito`) REFERENCES `distrito` (`id_distrito`);
+  ADD CONSTRAINT `cliente_ibfk_1` FOREIGN KEY (`id_persona`) REFERENCES `persona` (`id_persona`);
 
 --
 -- Filtros para la tabla `departamento`
@@ -754,7 +814,7 @@ ALTER TABLE `producto`
 -- Filtros para la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
-  ADD CONSTRAINT `proveedor_ibfk_1` FOREIGN KEY (`id_distrito`) REFERENCES `distrito` (`id_distrito`);
+  ADD CONSTRAINT `proveedor_ibfk_1` FOREIGN KEY (`id_persona`) REFERENCES `persona` (`id_persona`);
 
 --
 -- Filtros para la tabla `provincia`
@@ -763,10 +823,17 @@ ALTER TABLE `provincia`
   ADD CONSTRAINT `provincia_ibfk_1` FOREIGN KEY (`id_departamento`) REFERENCES `departamento` (`id_departamento`);
 
 --
+-- Filtros para la tabla `repartidor`
+--
+ALTER TABLE `repartidor`
+  ADD CONSTRAINT `repartidor_ibfk_1` FOREIGN KEY (`id_persona`) REFERENCES `persona` (`id_persona`);
+
+--
 -- Filtros para la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  ADD CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`);
+  ADD CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`),
+  ADD CONSTRAINT `usuario_ibfk_2` FOREIGN KEY (`id_persona`) REFERENCES `persona` (`id_persona`);
 
 --
 -- Filtros para la tabla `venta`

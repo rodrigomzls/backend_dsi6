@@ -15,4 +15,4 @@ const db = await mysql.createConnection({
 // Exportación de la conexión
 export default db;
 
-//comentario
+

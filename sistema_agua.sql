@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 18-10-2025 a las 22:19:23
+-- Tiempo de generación: 19-10-2025 a las 22:42:36
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -273,6 +273,7 @@ CREATE TABLE `persona` (
   `nombre_completo` varchar(200) NOT NULL,
   `telefono` varchar(20) DEFAULT NULL,
   `direccion` varchar(200) DEFAULT NULL,
+  `coordenadas` varchar(100) DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -281,16 +282,16 @@ CREATE TABLE `persona` (
 -- Volcado de datos para la tabla `persona`
 --
 
-INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nombre_completo`, `telefono`, `direccion`, `activo`, `fecha_registro`) VALUES
-(1, 'DNI', '70123456', 'Juan Pérez', '999888777', 'Av. Principal 123', 1, '2025-10-18 20:18:44'),
-(2, 'DNI', '70876543', 'María García', '999888666', 'Calle Los Pinos 456', 1, '2025-10-18 20:18:44'),
-(3, 'DNI', '71234567', 'Carlos López', '999888555', 'Jr. Union 789', 1, '2025-10-18 20:18:44'),
-(4, 'RUC', '20123456789', 'Proveedor Agua Pura SAC', '988777666', 'Av. Industrial 123', 1, '2025-10-18 20:18:44'),
-(5, 'RUC', '20123456788', 'Insumos Beverage Perú', '988777555', 'Calle Los Olivos 456', 1, '2025-10-18 20:18:44'),
-(6, 'DNI', '70000001', 'Administrador Sistema', '999999999', 'Dirección Admin', 1, '2025-10-18 20:18:44'),
-(7, 'DNI', '71111111', 'Bodega Don Pepe', '911111111', 'Av. Mercado 111', 1, '2025-10-18 20:18:44'),
-(8, 'RUC', '20111111111', 'Restaurante La Olla', '922222222', 'Calle Comida 222', 1, '2025-10-18 20:18:44'),
-(9, 'DNI', '72222222', 'Gimnasio Power Fit', '933333333', 'Jr. Deportes 333', 1, '2025-10-18 20:18:44');
+INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nombre_completo`, `telefono`, `direccion`, `coordenadas`, `activo`, `fecha_registro`) VALUES
+(1, 'DNI', '70123456', 'Juan Pérez', '999888777', 'Av. Principal 123', NULL, 1, '2025-10-18 20:18:44'),
+(2, 'DNI', '70876543', 'María García', '999888666', 'Calle Los Pinos 456', NULL, 1, '2025-10-18 20:18:44'),
+(3, 'DNI', '71234567', 'Carlos López', '999888555', 'Jr. Union 789', NULL, 1, '2025-10-18 20:18:44'),
+(4, 'RUC', '20123456789', 'Proveedor Agua Pura SAC', '988777666', 'Av. Industrial 123', NULL, 1, '2025-10-18 20:18:44'),
+(5, 'RUC', '20123456788', 'Insumos Beverage Perú', '988777555', 'Calle Los Olivos 456', NULL, 1, '2025-10-18 20:18:44'),
+(6, 'DNI', '70000001', 'Administrador Sistema', '999999999', 'Dirección Admin', NULL, 1, '2025-10-18 20:18:44'),
+(7, 'DNI', '71111111', 'Bodega Don Pepe', '911111111', 'Av. Mercado 111', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(8, 'RUC', '20111111111', 'Restaurante La Olla', '922222222', 'Calle Comida 222', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(9, 'DNI', '72222222', 'Gimnasio Power Fit', '933333333', 'Jr. Deportes 333', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 

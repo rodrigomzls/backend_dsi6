@@ -12,7 +12,7 @@ const router = express.Router();
 router.use("/productos", productoRoutes);
 router.use("/categorias", categoriaRoutes);
 router.use("/marcas", marcaRoutes);
-router.use("/proveedor", proveedorRoutes);
+router.use("/proveedores", proveedorRoutes);
 router.use("/paises", paisRoutes);
 router.use("/clientes", clienteRoutes);
 router.use("/ubicacion", ubicacionRoutes);

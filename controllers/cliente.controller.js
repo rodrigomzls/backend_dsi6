@@ -1,23 +1,28 @@
 import db from "../config/db.js";
 
-// Obtener todos los clientes
+// Obtener todos los clientes con información de persona
 export const getClientes = async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM cliente");
+    const [rows] = await db.query(`
+      SELECT 
+        c.id_cliente as id,
+        p.tipo_documento,
+        p.numero_documento as dni,
+        p.nombre_completo as nombre,
+        p.telefono,
+        p.direccion,
+        p.coordenadas,
+        c.tipo_cliente,
+        c.razon_social,
+        p.activo,
+        p.fecha_registro
+      FROM cliente c
+      INNER JOIN persona p ON c.id_persona = p.id_persona
+      WHERE c.activo = TRUE
+      ORDER BY p.nombre_completo
+    `);
     
-    const clientesMapeados = rows.map(cliente => ({
-      id: cliente.id_cliente,
-      nombre: cliente.nombre,
-      telefono: cliente.telefono,
-      direccion: cliente.direccion,
-      distritoId: cliente.id_distrito,
-      tipoCliente: cliente.tipo_cliente,
-      activo: cliente.activo,
-      fechaRegistro: cliente.fecha_registro
-    }));
-    
-    console.log('Clientes mapeados:', clientesMapeados);
-    res.json(clientesMapeados);
+    res.json(rows);
   } catch (error) {
     console.error("Error al obtener clientes:", error);
     res.status(500).json({ message: "Error al obtener clientes" });
@@ -27,22 +32,29 @@ export const getClientes = async (req, res) => {
 // Obtener cliente por ID
 export const getClienteById = async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM cliente WHERE id_cliente = ?", [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ message: "Cliente no encontrado" });
+    const [rows] = await db.query(`
+      SELECT 
+        c.id_cliente as id,
+        p.tipo_documento,
+        p.numero_documento as dni,
+        p.nombre_completo as nombre,
+        p.telefono,
+        p.direccion,
+        p.coordenadas,
+        c.tipo_cliente,
+        c.razon_social,
+        p.activo,
+        p.fecha_registro
+      FROM cliente c
+      INNER JOIN persona p ON c.id_persona = p.id_persona
+      WHERE c.id_cliente = ? AND c.activo = TRUE
+    `, [req.params.id]);
     
-    const cliente = rows[0];
-    const clienteMapeado = {
-      id: cliente.id_cliente,
-      nombre: cliente.nombre,
-      telefono: cliente.telefono,
-      direccion: cliente.direccion,
-      distritoId: cliente.id_distrito,
-      tipoCliente: cliente.tipo_cliente,
-      activo: cliente.activo,
-      fechaRegistro: cliente.fecha_registro
-    };
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
     
-    res.json(clienteMapeado);
+    res.json(rows[0]);
   } catch (error) {
     console.error("Error al obtener cliente:", error);
     res.status(500).json({ message: "Error al obtener cliente" });
@@ -51,51 +63,136 @@ export const getClienteById = async (req, res) => {
 
 // Crear nuevo cliente
 export const createCliente = async (req, res) => {
+  const connection = await db.getConnection();
+  
   try {
-    const { nombre, telefono, direccion, distritoId, tipoCliente } = req.body;
-    
-    const [result] = await db.query(
-      "INSERT INTO cliente (nombre, telefono, direccion, id_distrito, tipo_cliente) VALUES (?, ?, ?, ?, ?)",
-      [nombre, telefono, direccion, distritoId, tipoCliente]
+    await connection.beginTransaction();
+
+    const {
+      tipo_documento,
+      dni,
+      nombre,
+      telefono,
+      direccion,
+      coordenadas,
+      tipo_cliente,
+      razon_social
+    } = req.body;
+
+    // 1. Insertar en tabla persona
+    const [personaResult] = await connection.query(
+      `INSERT INTO persona (tipo_documento, numero_documento, nombre_completo, telefono, direccion, coordenadas) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [tipo_documento, dni, nombre, telefono, direccion, coordenadas || null]
     );
-    
-    res.status(201).json({ 
-      id: result.insertId, 
-      message: "Cliente creado correctamente" 
+
+    const personaId = personaResult.insertId;
+
+    // 2. Insertar en tabla cliente
+    const [clienteResult] = await connection.query(
+      `INSERT INTO cliente (id_persona, tipo_cliente, razon_social) 
+       VALUES (?, ?, ?)`,
+      [personaId, tipo_cliente, razon_social || null]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      id: clienteResult.insertId,
+      message: "Cliente creado correctamente"
     });
+
   } catch (error) {
+    await connection.rollback();
     console.error("Error al crear cliente:", error);
+    
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: "El número de documento ya existe" });
+    }
+    
     res.status(500).json({ message: "Error al crear cliente" });
+  } finally {
+    connection.release();
   }
 };
 
 // Actualizar cliente
 export const updateCliente = async (req, res) => {
+  const connection = await db.getConnection();
+  
   try {
-    const { id } = req.params;
-    const { nombre, telefono, direccion, distritoId, tipoCliente, activo } = req.body;
+    await connection.beginTransaction();
 
-    const [result] = await db.query(
-      "UPDATE cliente SET nombre = ?, telefono = ?, direccion = ?, id_distrito = ?, tipo_cliente = ?, activo = ? WHERE id_cliente = ?",
-      [nombre, telefono, direccion, distritoId, tipoCliente, activo, id]
+    const { id } = req.params;
+    const {
+      tipo_documento,
+      dni,
+      nombre,
+      telefono,
+      direccion,
+      coordenadas,
+      tipo_cliente,
+      razon_social
+    } = req.body;
+
+    // 1. Obtener el id_persona del cliente
+    const [clienteRows] = await connection.query(
+      `SELECT id_persona FROM cliente WHERE id_cliente = ?`,
+      [id]
     );
 
-    if (result.affectedRows === 0)
+    if (clienteRows.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    const personaId = clienteRows[0].id_persona;
+
+    // 2. Actualizar tabla persona
+    await connection.query(
+      `UPDATE persona 
+       SET tipo_documento = ?, numero_documento = ?, nombre_completo = ?, telefono = ?, direccion = ?, coordenadas = ?
+       WHERE id_persona = ?`,
+      [tipo_documento, dni, nombre, telefono, direccion, coordenadas || null, personaId]
+    );
+
+    // 3. Actualizar tabla cliente
+    await connection.query(
+      `UPDATE cliente 
+       SET tipo_cliente = ?, razon_social = ?
+       WHERE id_cliente = ?`,
+      [tipo_cliente, razon_social || null, id]
+    );
+
+    await connection.commit();
 
     res.json({ message: "Cliente actualizado correctamente" });
+
   } catch (error) {
+    await connection.rollback();
     console.error("Error al actualizar cliente:", error);
+    
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: "El número de documento ya existe" });
+    }
+    
     res.status(500).json({ message: "Error al actualizar cliente" });
+  } finally {
+    connection.release();
   }
 };
 
-// Eliminar cliente
+// Eliminar cliente (borrado lógico)
 export const deleteCliente = async (req, res) => {
   try {
-    const [result] = await db.query("DELETE FROM cliente WHERE id_cliente = ?", [req.params.id]);
-    if (result.affectedRows === 0)
+    const [result] = await db.query(
+      `UPDATE cliente SET activo = FALSE WHERE id_cliente = ?`,
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Cliente no encontrado" });
+    }
 
     res.json({ message: "Cliente eliminado correctamente" });
   } catch (error) {

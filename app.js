@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import db from "./config/db.js";
 import indexRoutes from "./routes/index.js"; // centraliza rutas
+  
 
 dotenv.config();
 const app = express();

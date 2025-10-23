@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-10-2025 a las 17:57:01
+-- Tiempo de generación: 23-10-2025 a las 07:38:09
 -- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Versión de PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -61,9 +61,10 @@ CREATE TABLE `cliente` (
 --
 
 INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social`, `activo`, `fecha_registro`) VALUES
-(1, 7, 'Bodega', 'Bodega Don Pepes', 1, '2025-10-18 20:18:44'),
+(1, 7, 'Bodega', 'Bodega Don Pepin', 1, '2025-10-18 20:18:44'),
 (2, 8, 'Restaurante', 'Restaurante La Olla', 1, '2025-10-18 20:18:44'),
-(3, 9, 'Gimnasio', 'Gimnasio Power Futal', 1, '2025-10-18 20:18:44');
+(3, 9, 'Gimnasio', 'Gimnasio Power Futal', 1, '2025-10-18 20:18:44'),
+(4, 10, '', NULL, 1, '2025-10-23 04:27:24');
 
 -- --------------------------------------------------------
 
@@ -284,15 +285,16 @@ CREATE TABLE `persona` (
 --
 
 INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nombre_completo`, `telefono`, `direccion`, `coordenadas`, `activo`, `fecha_registro`) VALUES
-(1, 'DNI', '70123456', 'Juan Pérez', '999888777', 'Av. Principal 123', NULL, 1, '2025-10-18 20:18:44'),
-(2, 'DNI', '70876543', 'María García', '999888666', 'Calle Los Pinos 456', NULL, 1, '2025-10-18 20:18:44'),
-(3, 'DNI', '71234567', 'Carlos López', '999888555', 'Jr. Union 789', NULL, 1, '2025-10-18 20:18:44'),
-(4, 'RUC', '20123456789', 'Proveedor Agua Pura SAC', '988777666', 'Av. Industrial 123', NULL, 1, '2025-10-18 20:18:44'),
-(5, 'RUC', '20123456788', 'Insumos Beverage Perú', '988777555', 'Calle Los Olivos 456', NULL, 1, '2025-10-18 20:18:44'),
-(6, 'DNI', '70000001', 'Administrador Sistema', '999999999', 'Dirección Admin', NULL, 1, '2025-10-18 20:18:44'),
-(7, 'DNI', '76162729', 'Bodega Don Pepito', '911111111', 'Av. Mercado 111', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
-(8, 'RUC', '20111111111', 'Restaurante La Olla', '922222222', 'Calle Comida 222', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
-(9, 'DNI', '44443222', 'Gimnasio Power Futal', '933333333', 'Jr. Deportes 333', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44');
+(1, 'DNI', '70123456', 'Juan Pérez', '912345678', 'Av. Principal 123', NULL, 1, '2025-10-18 20:18:44'),
+(2, 'DNI', '70876543', 'María García', '912867430', 'Calle Los Pinos 456', NULL, 1, '2025-10-18 20:18:44'),
+(3, 'DNI', '71234567', 'Carlos López', '934210987', 'Jr. Union 789', NULL, 1, '2025-10-18 20:18:44'),
+(4, 'RUC', '20123456789', 'Proveedor Agua Pura SAC', '945678321', 'Av. Industrial 123', NULL, 1, '2025-10-18 20:18:44'),
+(5, 'RUC', '20123456788', 'Insumos Beverage Perú', '976543210', 'Calle Los Olivos 456', NULL, 1, '2025-10-18 20:18:44'),
+(6, 'DNI', '70000001', 'Administrador Sistema', '997654321', 'Dirección Admin', NULL, 1, '2025-10-18 20:18:44'),
+(7, 'DNI', '76162729', 'Axel Leandro Cohen Panduro', '959203847', 'Av. Mercado 111', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(8, 'RUC', '20111111111', 'Anacris Cubas Bardales', '947331209', 'Calle Comida 222', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(9, 'DNI', '44443222', 'Diego Fabricio Chavarry Macuyama', '986472315', 'Jr. Deportes 333', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(10, 'DNI', '61430576', 'Rodrigo Eduardo Meza Lomas', '918711805', 'Av. Bellavista 1055', NULL, 1, '2025-10-23 03:39:46');
 
 -- --------------------------------------------------------
 
@@ -322,10 +324,10 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 8.50, 97, 20, 1, 1, 'agua sin gas', 1, '2025-10-18 20:18:44'),
-(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 12.00, 80, 15, 1, 1, 'bjasda', 1, '2025-10-18 20:18:44'),
-(3, 'Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 1.50, 200, 50, 1, 1, 'afafs', 1, '2025-10-18 20:18:44'),
-(4, 'Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 2.50, 150, 30, 1, 1, 'fafa', 1, '2025-10-18 20:18:44');
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 95, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 80, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 12.00, 200, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 12.50, 150, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -441,7 +443,8 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_rol`, `id_persona`, `token_recuperacion`, `fecha_expiracion_token`, `ultimo_acceso`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, NULL, NULL, NULL, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47');
+(3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, NULL, NULL, NULL, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
+(5, 'rodre', 'rrodrigomzls@gmail.com', 'jajaKkreisi19', 2, 10, NULL, NULL, NULL, 1, '2025-10-23 03:42:18', '2025-10-23 03:42:18');
 
 -- --------------------------------------------------------
 
@@ -469,9 +472,10 @@ CREATE TABLE `venta` (
 --
 
 INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 4, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-10-22 15:05:37'),
-(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 5, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-10-22 14:25:46'),
-(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 5, 1, 3, '', '2025-10-22 03:52:17', '2025-10-22 14:25:46');
+(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 6, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-10-23 04:37:48'),
+(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 6, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-10-23 04:22:13'),
+(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 6, 1, 3, '', '2025-10-22 03:52:17', '2025-10-23 04:22:05'),
+(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 1, NULL, 3, '', '2025-10-23 04:37:32', '2025-10-23 04:37:32');
 
 -- --------------------------------------------------------
 
@@ -495,7 +499,8 @@ CREATE TABLE `venta_detalle` (
 INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`, `precio_unitario`) VALUES
 (1, 2, 1, 1, 8.50),
 (2, 3, 1, 2, 8.50),
-(3, 4, 1, 1, 8.50);
+(3, 4, 1, 1, 8.50),
+(4, 5, 1, 2, 4.00);
 
 --
 -- Índices para tablas volcadas
@@ -675,7 +680,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -735,7 +740,7 @@ ALTER TABLE `pedido_proveedor`
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -771,19 +776,19 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Restricciones para tablas volcadas

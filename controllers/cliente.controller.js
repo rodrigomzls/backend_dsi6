@@ -14,6 +14,7 @@ export const getClientes = async (req, res) => {
         p.coordenadas,
         c.tipo_cliente,
         c.razon_social,
+        p.nombre_completo,
         p.activo,
         p.fecha_registro
       FROM cliente c
@@ -43,6 +44,7 @@ export const getClienteById = async (req, res) => {
         p.coordenadas,
         c.tipo_cliente,
         c.razon_social,
+        p.nombre_completo,
         p.activo,
         p.fecha_registro
       FROM cliente c

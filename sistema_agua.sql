@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 23-10-2025 a las 07:38:09
+-- Tiempo de generación: 30-10-2025 a las 19:57:35
 -- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.0.30
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -50,7 +50,7 @@ INSERT INTO `categorias` (`id_categoria`, `nombre`) VALUES
 CREATE TABLE `cliente` (
   `id_cliente` int(11) NOT NULL,
   `id_persona` int(11) NOT NULL,
-  `tipo_cliente` enum('Bodega','Restaurante','Gimnasio','Final','Empresa') NOT NULL,
+  `tipo_cliente` enum('Bodega','Restaurante','Gimnasio','Persona','Empresa') NOT NULL,
   `razon_social` varchar(200) DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
@@ -64,7 +64,9 @@ INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social
 (1, 7, 'Bodega', 'Bodega Don Pepin', 1, '2025-10-18 20:18:44'),
 (2, 8, 'Restaurante', 'Restaurante La Olla', 1, '2025-10-18 20:18:44'),
 (3, 9, 'Gimnasio', 'Gimnasio Power Futal', 1, '2025-10-18 20:18:44'),
-(4, 10, '', NULL, 1, '2025-10-23 04:27:24');
+(4, 10, 'Persona', NULL, 1, '2025-10-23 04:27:24'),
+(5, 11, 'Bodega', NULL, 1, '2025-10-26 22:28:02'),
+(6, 12, 'Persona', NULL, 1, '2025-10-26 22:34:51');
 
 -- --------------------------------------------------------
 
@@ -294,7 +296,10 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (7, 'DNI', '76162729', 'Axel Leandro Cohen Panduro', '959203847', 'Av. Mercado 111', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
 (8, 'RUC', '20111111111', 'Anacris Cubas Bardales', '947331209', 'Calle Comida 222', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
 (9, 'DNI', '44443222', 'Diego Fabricio Chavarry Macuyama', '986472315', 'Jr. Deportes 333', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
-(10, 'DNI', '61430576', 'Rodrigo Eduardo Meza Lomas', '918711805', 'Av. Bellavista 1055', NULL, 1, '2025-10-23 03:39:46');
+(10, 'DNI', '61430576', 'Rodrigo Eduardo Meza Lomas', '918711805', 'Av. Bellavista 1055', NULL, 1, '2025-10-23 03:39:46'),
+(11, 'DNI', '83819371', 'michel ', '982638432', 'Jr.los cedros', '-12.2652765,-76.8639302', 1, '2025-10-26 22:28:02'),
+(12, 'DNI', '00000000', 'Luis Torres Paredes', '982837932', 'jr.los mangos ms 3 lt 2', NULL, 1, '2025-10-26 22:34:51'),
+(13, 'DNI', '76818292', 'Paolo Cesar Fumachi Lopez', '961739701', 'jr.los guayabos mz.12 lt.12', '', 1, '2025-10-28 03:36:35');
 
 -- --------------------------------------------------------
 
@@ -326,8 +331,8 @@ CREATE TABLE `producto` (
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
 (1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 95, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
 (2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 80, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 12.00, 200, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
-(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 12.50, 150, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 200, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 150, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -444,7 +449,8 @@ CREATE TABLE `usuario` (
 
 INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_rol`, `id_persona`, `token_recuperacion`, `fecha_expiracion_token`, `ultimo_acceso`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
 (3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, NULL, NULL, NULL, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
-(5, 'rodre', 'rrodrigomzls@gmail.com', 'jajaKkreisi19', 2, 10, NULL, NULL, NULL, 1, '2025-10-23 03:42:18', '2025-10-23 03:42:18');
+(5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, NULL, NULL, NULL, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
+(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, NULL, NULL, NULL, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57');
 
 -- --------------------------------------------------------
 
@@ -474,8 +480,8 @@ CREATE TABLE `venta` (
 INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`) VALUES
 (2, 3, '2025-10-21', '10:20:05', 8.50, 1, 6, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-10-23 04:37:48'),
 (3, 1, '2025-10-21', '15:38:08', 17.00, 1, 6, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-10-23 04:22:13'),
-(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 6, 1, 3, '', '2025-10-22 03:52:17', '2025-10-23 04:22:05'),
-(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 1, NULL, 3, '', '2025-10-23 04:37:32', '2025-10-23 04:37:32');
+(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 4, 1, 3, '', '2025-10-22 03:52:17', '2025-10-27 18:49:56'),
+(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 1, NULL, 3, '', '2025-10-23 04:37:32', '2025-10-30 14:18:49');
 
 -- --------------------------------------------------------
 
@@ -680,7 +686,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -740,7 +746,7 @@ ALTER TABLE `pedido_proveedor`
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -776,7 +782,7 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `venta`

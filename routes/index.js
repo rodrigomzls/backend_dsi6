@@ -10,6 +10,8 @@ import ubicacionRoutes from "./ubicacion.routes.js";
 import authRoutes from "./auth.routes.js";
 import ventaRoutes from "./venta.routes.js";
 import repartidorRoutes from './repartidor.routes.js';
+import usuarioRoutes from './usuario.routes.js';
+import personaRoutes from "./persona.routes.js"
 
 const router = express.Router();
 
@@ -21,11 +23,14 @@ router.use("/productos", productoRoutes);
 router.use("/categorias", categoriaRoutes);
 router.use("/marcas", marcaRoutes);
 router.use("/proveedores", proveedorRoutes);
+router.use("/personas", personaRoutes);
 router.use("/paises", paisRoutes);
 router.use("/clientes", clienteRoutes);
 router.use("/ubicacion", ubicacionRoutes);
 router.use("/ventas", ventaRoutes);
 // ✅ CORREGIDO: Cambiar de '/api/repartidores' a '/repartidores'
 router.use("/repartidores", repartidorRoutes);
+// Rutas para administración de usuarios (roles, activar/desactivar)
+router.use('/usuarios', usuarioRoutes);
 
 export default router;

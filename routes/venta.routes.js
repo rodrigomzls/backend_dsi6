@@ -12,17 +12,17 @@ import { verifyToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Todas las rutas requieren autenticación
+// Todas las rutas requieren autenticación y módulo 'ventas'
 router.use(verifyToken);
 
-// Rutas existentes
-router.get('/', requireRole([1, 2]), getVentas); // Admin y Vendedor
-router.get('/:id', requireRole([1, 2]), getVentaById);
-router.post('/', requireRole([1, 2]), createVenta); // Ambos pueden crear
-router.patch('/:id/estado', requireRole([1]), updateEstadoVenta); // Solo Admin cambia estado
+// Rutas de ventas
+router.get('/', requireRole([1, 2], 'ventas'), getVentas);
+router.get('/:id', requireRole([1, 2], 'ventas'), getVentaById);
+router.post('/', requireRole([1, 2], 'ventas'), createVenta);
+router.patch('/:id/estado', requireRole([1, 2], 'ventas'), updateEstadoVenta);
 
-// ✅ NUEVAS RUTAS - Agregar protección de roles
-router.get('/estado/:estadoId', requireRole([1, 2]), getVentasPorEstado); // Admin y Vendedor
-router.patch('/:id/asignar-repartidor', requireRole([1]), asignarRepartidor); // Solo Admin
+// Rutas específicas
+router.get('/estado/:estadoId', requireRole([1, 2], 'ventas'), getVentasPorEstado);
+router.patch('/:id/asignar-repartidor', requireRole([1, 2], 'ventas_asignacion_rutas'), asignarRepartidor); // Usa módulo 'rutas'
 
 export default router;

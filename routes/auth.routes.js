@@ -6,6 +6,32 @@ import db from '../config/db.js';
 
 const router = express.Router();
 
+// Función auxiliar para obtener módulos por rol
+const obtenerModulosPorRol = (idRol) => {
+  const modulos = {
+    // Administrador (id: 1)
+    1: [
+      'usuarios', 'personas', 'clientes', 'productos', 
+      'ventas_nueva', 'ventas', 'ventas_asignacion_rutas',
+      'rutas', 'inventario', 'reportes'
+    ],
+    // Vendedor (id: 2)
+    2: [
+      'clientes', 'productos', 'ventas_nueva', 'ventas', 'ventas_asignacion_rutas'
+    ],
+    // Repartidor (id: 3)
+    3: [
+      'rutas_asignadas', 'entregas', 'historial_entregas'
+    ],
+    // Almacenero (id: 4)
+    4: [
+      'inventario', 'productos', 'inventario_movimiento', 'inventario_reportes'
+    ]
+  };
+  
+  return modulos[idRol] || [];
+};
+
 // ========================== LOGIN ==========================
 router.post('/login', async (req, res) => {
   try {
@@ -31,6 +57,9 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Usuario o password incorrectos.' });
     }
 
+    // ✅ OBTENER MÓDULOS PARA EL LOGIN
+    const modulos = obtenerModulosPorRol(user.id_rol);
+
     const token = jwt.sign(
       { 
         userId: user.id_usuario, 
@@ -41,6 +70,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '8h' }
     );
 
+    // ✅ INCLUIR MÓDULOS EN LA RESPUESTA DEL LOGIN
     res.json({
       token,
       user: {
@@ -48,7 +78,8 @@ router.post('/login', async (req, res) => {
         username: user.nombre_usuario,
         nombre: user.nombre_completo,
         role: user.id_rol,
-        roleName: user.rol
+        roleName: user.rol,
+        modulos: modulos // ← ESTO ES LO QUE FALTABA
       }
     });
 
@@ -82,6 +113,10 @@ router.get('/verify', async (req, res) => {
     }
     
     const user = users[0];
+    
+    // ✅ USAR LA MISMA FUNCIÓN PARA MANTENER CONSISTENCIA
+    const modulos = obtenerModulosPorRol(user.id_rol);
+
     res.json({
       valid: true,
       user: {
@@ -89,7 +124,8 @@ router.get('/verify', async (req, res) => {
         username: user.nombre_usuario,
         nombre: user.nombre_completo,
         role: user.id_rol,
-        roleName: user.rol
+        roleName: user.rol,
+        modulos: modulos
       }
     });
   } catch (error) {
@@ -117,15 +153,47 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Asegurar que exista id_persona (la columna es NOT NULL en la BD)
+    let personaId = id_persona;
+    if (!personaId) {
+      const personaPayload = req.body.persona;
+      if (personaPayload) {
+        const tipoDocumento = personaPayload.tipo_documento || 'DNI';
+        const numeroDocumento = (personaPayload.numero_documento && personaPayload.numero_documento.trim() !== '') ? personaPayload.numero_documento.trim() : null;
+        const nombreCompleto = personaPayload.nombre_completo || nombre_usuario;
+        const telefono = personaPayload.telefono || null;
+        const direccion = personaPayload.direccion || null;
+
+        const [pResult] = await db.execute(
+          'INSERT INTO persona (tipo_documento, numero_documento, nombre_completo, telefono, direccion, activo) VALUES (?, ?, ?, ?, ?, 1)',
+          [tipoDocumento, numeroDocumento, nombreCompleto, telefono, direccion]
+        );
+        personaId = pResult.insertId;
+      } else {
+        const nombreCompleto = nombre_usuario; // fallback si no se pasa persona
+        const tipoDocumento = 'DNI';
+        // Guardar NULL si no hay número de documento
+        const numeroDocumento = null;
+        const [pResult] = await db.execute(
+          'INSERT INTO persona (tipo_documento, numero_documento, nombre_completo, activo) VALUES (?, ?, ?, 1)',
+          [tipoDocumento, numeroDocumento, nombreCompleto]
+        );
+        personaId = pResult.insertId;
+      }
+    }
+
     const [result] = await db.execute(
       'INSERT INTO usuario (nombre_usuario, email, password, id_rol, id_persona, activo) VALUES (?, ?, ?, ?, ?, 1)',
-      [nombre_usuario, email, hashedPassword, id_rol, id_persona || null]
+      [nombre_usuario, email, hashedPassword, id_rol, personaId]
     );
 
     const id_usuario = result.insertId;
 
+    // ✅ OBTENER MÓDULOS TAMBIÉN PARA REGISTER
+    const modulos = obtenerModulosPorRol(id_rol);
+
     const token = jwt.sign(
-      { id_usuario, nombre_usuario, id_rol },
+      { userId: id_usuario, username: nombre_usuario, role: id_rol },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '8h' }
     );
@@ -137,7 +205,8 @@ router.post('/register', async (req, res) => {
         id: id_usuario,
         username: nombre_usuario,
         email,
-        role: id_rol
+        role: id_rol,
+        modulos: modulos // ← INCLUIR MÓDULOS TAMBIÉN AQUÍ
       }
     });
   } catch (error) {

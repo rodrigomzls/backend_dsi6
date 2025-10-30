@@ -11,15 +11,13 @@ import {
 
 const router = express.Router();
 
-// Rutas públicas (sin autenticación) - solo lectura
-router.get("/", getProductos);
-router.get("/:id", getProductoById);
+// Rutas de productos con validación de módulo
+router.get("/", verifyToken, requireRole([1, 2, 4], 'productos'), getProductos);
+router.get("/:id", verifyToken, requireRole([1, 2, 4], 'productos'), getProductoById);
 
-// Rutas protegidas para modificación
-router.use(verifyToken);
-
-router.post("/", requireRole([1]), createProducto); // Solo Admin
-router.put("/:id", requireRole([1]), updateProducto); // Solo Admin
-router.delete("/:id", requireRole([1]), deleteProducto); // Solo Admin
+// Rutas protegidas para modificación (solo Admin y Almacenero)
+router.post("/", verifyToken, requireRole([1, 4], 'productos'), createProducto);
+router.put("/:id", verifyToken, requireRole([1, 4], 'productos'), updateProducto);
+router.delete("/:id", verifyToken, requireRole([1], 'productos'), deleteProducto); // Solo Admin
 
 export default router;

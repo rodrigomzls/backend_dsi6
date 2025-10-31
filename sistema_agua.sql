@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 30-10-2025 a las 19:57:35
+-- Tiempo de generación: 31-10-2025 a las 17:04:50
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -435,9 +435,6 @@ CREATE TABLE `usuario` (
   `password` varchar(255) NOT NULL,
   `id_rol` int(11) NOT NULL,
   `id_persona` int(11) NOT NULL,
-  `token_recuperacion` varchar(255) DEFAULT NULL,
-  `fecha_expiracion_token` timestamp NULL DEFAULT NULL,
-  `ultimo_acceso` timestamp NULL DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
   `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -447,10 +444,10 @@ CREATE TABLE `usuario` (
 -- Volcado de datos para la tabla `usuario`
 --
 
-INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_rol`, `id_persona`, `token_recuperacion`, `fecha_expiracion_token`, `ultimo_acceso`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, NULL, NULL, NULL, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
-(5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, NULL, NULL, NULL, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
-(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, NULL, NULL, NULL, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57');
+INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_rol`, `id_persona`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
+(3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
+(5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
+(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57');
 
 -- --------------------------------------------------------
 
@@ -782,7 +779,7 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `venta`

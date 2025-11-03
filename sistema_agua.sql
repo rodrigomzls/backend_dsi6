@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 03-11-2025 a las 20:50:29
+-- Tiempo de generación: 03-11-2025 a las 20:59:51
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -150,10 +150,8 @@ CREATE TABLE `estado_venta` (
 
 INSERT INTO `estado_venta` (`id_estado_venta`, `estado`) VALUES
 (1, 'Pendiente'),
-(3, 'En preparación'),
 (4, 'Listo para repartos'),
 (5, 'En ruta'),
-(6, 'Entregado'),
 (7, 'Pagado'),
 (8, 'Cancelado');
 
@@ -475,8 +473,8 @@ CREATE TABLE `venta` (
 --
 
 INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 6, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-10-23 04:37:48'),
-(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 6, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-10-23 04:22:13'),
+(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-11-03 19:59:31'),
+(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25'),
 (4, 1, '2025-10-21', '22:52:17', 8.50, 1, 5, 1, 3, '', '2025-10-22 03:52:17', '2025-11-01 21:34:17'),
 (5, 4, '2025-10-22', '23:37:32', 8.00, 2, 5, 1, 3, '', '2025-10-23 04:37:32', '2025-11-01 21:34:17'),
 (6, 2, '2025-11-01', '16:41:52', 60.00, 1, 5, 1, 5, '', '2025-11-01 21:41:52', '2025-11-01 21:49:14'),

@@ -65,3 +65,50 @@ Abajo tienes un resumen condensado de las tablas principales, sus relaciones y u
   - Módulo `ventas`: endpoint para crear venta (transaction: insertar `venta`, insertar `venta_detalle`, decrementar stock en `lote_producto`/`producto`).
 
 Si quieres, puedo añadir ejemplos de payloads (login, register, crear venta) o generar un diagrama ER simplificado en Markdown para incluir en esta guía.
+
+  ### Cambios recientes (últimas actualizaciones)
+
+  - Se añadió el script `generar-hash-real.js` en la raíz del proyecto. Úsalo como referencia para generación/validación de hashes si necesitas scripts auxiliares fuera del servidor.
+  - Revisa `app.js` y las rutas bajo `routes/` para ver las últimas integraciones; muchas rutas públicas de lectura permanecen sin `verifyToken`, y las operaciones de modificación están protegidas como convención.
+  - Si estás trabajando en la rama de integración (por ejemplo `paolo-integration`), confirma que localmente tu branch está actualizado antes de hacer merge.
+
+  ### Cómo probar localmente (rápido)
+
+  1. Instala dependencias y arranca en modo desarrollo:
+
+    - Asegúrate de tener un MySQL disponible y crea la base con `sistema_agua.sql` si aún no la tienes.
+    - Copia un `.env` con las variables mínimas: `PORT`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`.
+    - Comandos típicos (PowerShell):
+
+       npm install
+       npm run dev
+
+  2. Verifica la conexión a la BD: `app.js` ejecuta una consulta simple (`SELECT 1+1 AS result`) al iniciar; revisa la salida en la consola para confirmar.
+
+  3. Probar endpoints básicos:
+
+    - Importa `sistema_agua.sql` en tu MySQL local para poblar tablas y datos de prueba.
+    - Usa Postman/Insomnia o curl para probar rutas públicas (GET productos, GET categorias) y rutas protegidas (requieren `Authorization: Bearer <token>`).
+
+  ### Checklist rápido antes de push / crear PR
+
+  - Ejecutar `npm run lint` si tienes linter configurado (añádelo si falta).
+  - Ejecutar `npm run dev` y confirmar que la app arranca y muestra la comprobación del pool de MySQL.
+  - Probar manualmente (al menos) un endpoint público y un endpoint protegido con token válido.
+  - Actualizar `README.md` si añades endpoints públicos o scripts nuevos (por ejemplo `generar-hash-real.js`).
+  - Añadir una entrada breve en el changelog/PR describiendo los cambios de BD o contratos JSON.
+
+  ### Notas de debugging comunes
+
+  - Errores de conexión DB: revisa variables de entorno y que el usuario MySQL tenga permisos sobre la base `DB_NAME`.
+  - JWT / auth: si recibes 401, confirma `process.env.JWT_SECRET` local y que el token se genera con la misma clave.
+  - Duplicados/constraints SQL: si ves errores por UNIQUE constraints (usuario/email/numero_documento), valida los datos de prueba y usa transacciones cuando crees persona+usuario.
+  - Transacciones: para operaciones compuestas (crear usuario+persona, crear venta+detalles, actualizar stock), usar transacciones con el pool de `mysql2/promise` para evitar estados inconsistentes.
+
+  ### Pequeños extras y próximos pasos sugeridos
+
+  - Añadir scripts de verificación automatizada (un par de tests de integración) que usen una base de datos en memoria o una DB de prueba para validar los endpoints más críticos (auth, crear venta).
+  - Documentar payloads de ejemplo para `auth` y `venta` en un `docs/` o en el `README.md`.
+  - Si vas a exponer más endpoints públicos, añade rate-limiting y validación de inputs (p. ej. `express-validator`) para robustez.
+
+  Si quieres, aplico estos cambios directamente en un branch y abro un commit/PR con este archivo modificado y un `README.md` actualizado con los pasos para ejecutar localmente.

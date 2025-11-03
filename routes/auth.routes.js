@@ -13,7 +13,7 @@ const obtenerModulosPorRol = (idRol) => {
     1: [
       'usuarios', 'personas', 'clientes', 'productos', 
       'ventas_nueva', 'ventas', 'ventas_asignacion_rutas',
-      'rutas', 'inventario', 'reportes'
+      'rutas', 'inventario', 'reportes','repartidores'
     ],
     // Vendedor (id: 2)
     2: [

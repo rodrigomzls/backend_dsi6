@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 31-10-2025 a las 17:04:50
+-- Tiempo de generación: 03-11-2025 a las 20:50:29
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -65,7 +65,7 @@ INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social
 (2, 8, 'Restaurante', 'Restaurante La Olla', 1, '2025-10-18 20:18:44'),
 (3, 9, 'Gimnasio', 'Gimnasio Power Futal', 1, '2025-10-18 20:18:44'),
 (4, 10, 'Persona', NULL, 1, '2025-10-23 04:27:24'),
-(5, 11, 'Bodega', NULL, 1, '2025-10-26 22:28:02'),
+(5, 11, 'Bodega', 'ncjaisnca', 1, '2025-10-26 22:28:02'),
 (6, 12, 'Persona', NULL, 1, '2025-10-26 22:34:51');
 
 -- --------------------------------------------------------
@@ -150,7 +150,6 @@ CREATE TABLE `estado_venta` (
 
 INSERT INTO `estado_venta` (`id_estado_venta`, `estado`) VALUES
 (1, 'Pendiente'),
-(2, 'Confirmado'),
 (3, 'En preparación'),
 (4, 'Listo para repartos'),
 (5, 'En ruta'),
@@ -293,13 +292,13 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (4, 'RUC', '20123456789', 'Proveedor Agua Pura SAC', '945678321', 'Av. Industrial 123', NULL, 1, '2025-10-18 20:18:44'),
 (5, 'RUC', '20123456788', 'Insumos Beverage Perú', '976543210', 'Calle Los Olivos 456', NULL, 1, '2025-10-18 20:18:44'),
 (6, 'DNI', '70000001', 'Administrador Sistema', '997654321', 'Dirección Admin', NULL, 1, '2025-10-18 20:18:44'),
-(7, 'DNI', '76162729', 'Axel Leandro Cohen Panduro', '959203847', 'Av. Mercado 111', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
-(8, 'RUC', '20111111111', 'Anacris Cubas Bardales', '947331209', 'Calle Comida 222', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(7, 'DNI', '77722728', 'Axel Leandro Cohen Panduro', '959203847', 'Av. Mercado 111', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
+(8, 'RUC', '20111111111', 'Restaurante La Olla S.A.C', '947331209', 'Calle Comida 222', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
 (9, 'DNI', '44443222', 'Diego Fabricio Chavarry Macuyama', '986472315', 'Jr. Deportes 333', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
 (10, 'DNI', '61430576', 'Rodrigo Eduardo Meza Lomas', '918711805', 'Av. Bellavista 1055', NULL, 1, '2025-10-23 03:39:46'),
 (11, 'DNI', '83819371', 'michel ', '982638432', 'Jr.los cedros', '-12.2652765,-76.8639302', 1, '2025-10-26 22:28:02'),
 (12, 'DNI', '00000000', 'Luis Torres Paredes', '982837932', 'jr.los mangos ms 3 lt 2', NULL, 1, '2025-10-26 22:34:51'),
-(13, 'DNI', '76818292', 'Paolo Cesar Fumachi Lopez', '961739701', 'jr.los guayabos mz.12 lt.12', '', 1, '2025-10-28 03:36:35');
+(13, 'DNI', '76162729', 'Paolo Cesar Fumachi Lopez', '961739701', 'jr.los guayabos mz.12 lt.12', '', 1, '2025-10-28 03:36:35');
 
 -- --------------------------------------------------------
 
@@ -329,9 +328,9 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 95, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 94, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
 (2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 80, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 200, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 187, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
 (4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 150, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
@@ -447,7 +446,8 @@ CREATE TABLE `usuario` (
 INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_rol`, `id_persona`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
 (3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
 (5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
-(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57');
+(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57'),
+(8, 'Juan', 'juan@gmail.com', '$2b$10$HGmkX1h9KB3TRMpAKzROY.jL3UBiBv54mTciKqpYnmXsMgJUvYGtO', 3, 1, 1, '2025-10-31 21:23:33', '2025-10-31 21:23:33');
 
 -- --------------------------------------------------------
 
@@ -477,8 +477,11 @@ CREATE TABLE `venta` (
 INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`) VALUES
 (2, 3, '2025-10-21', '10:20:05', 8.50, 1, 6, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-10-23 04:37:48'),
 (3, 1, '2025-10-21', '15:38:08', 17.00, 1, 6, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-10-23 04:22:13'),
-(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 4, 1, 3, '', '2025-10-22 03:52:17', '2025-10-27 18:49:56'),
-(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 1, NULL, 3, '', '2025-10-23 04:37:32', '2025-10-30 14:18:49');
+(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 5, 1, 3, '', '2025-10-22 03:52:17', '2025-11-01 21:34:17'),
+(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 5, 1, 3, '', '2025-10-23 04:37:32', '2025-11-01 21:34:17'),
+(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 5, 1, 5, '', '2025-11-01 21:41:52', '2025-11-01 21:49:14'),
+(7, 6, '2025-11-01', '16:46:29', 4.00, 1, 5, 3, 5, '', '2025-11-01 21:46:29', '2025-11-01 21:51:47'),
+(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12');
 
 -- --------------------------------------------------------
 
@@ -503,7 +506,10 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (1, 2, 1, 1, 8.50),
 (2, 3, 1, 2, 8.50),
 (3, 4, 1, 1, 8.50),
-(4, 5, 1, 2, 4.00);
+(4, 5, 1, 2, 4.00),
+(5, 6, 3, 10, 6.00),
+(6, 7, 1, 1, 4.00),
+(7, 8, 3, 3, 6.00);
 
 --
 -- Índices para tablas volcadas
@@ -779,19 +785,19 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Restricciones para tablas volcadas

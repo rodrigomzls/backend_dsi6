@@ -12,7 +12,7 @@ import ventaRoutes from "./venta.routes.js";
 import repartidorRoutes from './repartidor.routes.js';
 import usuarioRoutes from './usuario.routes.js';
 import personaRoutes from "./persona.routes.js"
-
+import repartidorVentaRoutes from './repartidor-venta.routes.js';
 const router = express.Router();
 
 // Rutas públicas (sin autenticación)
@@ -32,5 +32,6 @@ router.use("/ventas", ventaRoutes);
 router.use("/repartidores", repartidorRoutes);
 // Rutas para administración de usuarios (roles, activar/desactivar)
 router.use('/usuarios', usuarioRoutes);
+router.use("/ventas", repartidorVentaRoutes);
 
 export default router;

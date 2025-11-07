@@ -21,7 +21,7 @@ const obtenerModulosPorRol = (idRol) => {
     ],
     // Repartidor (id: 3)
     3: [
-      'rutas_asignadas', 'entregas', 'historial_entregas'
+      'rutas_asignadas', 'entregas_pendientes', 'historial_entregas'
     ],
     // Almacenero (id: 4)
     4: [

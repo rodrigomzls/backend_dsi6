@@ -57,10 +57,11 @@ export const verifyToken = async (req, res, next) => {
  */
 export const requireRole = (roles, modulo) => {
     // Definición de módulos permitidos por rol
-    const MODULOS_POR_ROL = {
+  const MODULOS_POR_ROL = {
         1: [ // Administrador
             'usuarios', 'personas', 'clientes', 'productos', 'ventas', 
-            'rutas', 'inventario', 'reportes','ventas_asignacion_rutas', 'repartidores'
+            'rutas', 'inventario', 'reportes','ventas_asignacion_rutas', 'repartidores',
+            'inventario_movimiento', 'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas'
         ],
         2: [ // Vendedor
             'clientes', 'productos', 'ventas','ventas_asignacion_rutas'
@@ -69,7 +70,8 @@ export const requireRole = (roles, modulo) => {
             'rutas_asignadas', 'entregas_pendientes', 'historial_entregas'
         ],
         4: [ // Almacenero
-            'inventario', 'productos', 'movimientos', 'reportes'
+            'inventario', 'productos', 'inventario_movimiento', 'inventario_reportes',
+            'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas'
         ]
     };
 

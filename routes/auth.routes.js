@@ -13,7 +13,8 @@ const obtenerModulosPorRol = (idRol) => {
     1: [
       'usuarios', 'personas', 'clientes', 'productos', 
       'ventas_nueva', 'ventas', 'ventas_asignacion_rutas',
-      'rutas', 'inventario', 'reportes','repartidores'
+      'rutas', 'inventario', 'reportes','repartidores',
+      'inventario_movimiento', 'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas'
     ],
     // Vendedor (id: 2)
     2: [
@@ -25,7 +26,8 @@ const obtenerModulosPorRol = (idRol) => {
     ],
     // Almacenero (id: 4)
     4: [
-      'inventario', 'productos', 'inventario_movimiento', 'inventario_reportes'
+      'inventario', 'productos', 'inventario_movimiento', 'inventario_reportes',
+      'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas'
     ]
   };
   

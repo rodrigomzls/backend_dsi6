@@ -13,6 +13,10 @@ import repartidorRoutes from './repartidor.routes.js';
 import usuarioRoutes from './usuario.routes.js';
 import personaRoutes from "./persona.routes.js"
 import repartidorVentaRoutes from './repartidor-venta.routes.js';
+import movimientoStockRoutes from "./movimiento_stock.routes.js";
+import loteRoutes from "./lote.routes.js"; // ✅ NUEVA RUTA AÑADIDA
+import pedidoProveedorRoutes from "./pedido_proveedor.routes.js"; // ✅ NUEVA RUTA AÑADIDA
+import inventarioRoutes from "./inventario.routes.js"; // ✅ NUEVA RUTA AÑADIDA
 const router = express.Router();
 
 // Rutas públicas (sin autenticación)
@@ -33,5 +37,9 @@ router.use("/repartidores", repartidorRoutes);
 // Rutas para administración de usuarios (roles, activar/desactivar)
 router.use('/usuarios', usuarioRoutes);
 router.use("/ventas", repartidorVentaRoutes);
-
+// ✅ CORREGIDO: Cambiar de '/api/movimientos' a '/movimientos-stock'
+router.use("/movimientos-stock", movimientoStockRoutes);
+router.use("/lotes", loteRoutes); // ✅ NUEVA RUTA AÑADIDA
+router.use("/pedidos-proveedor", pedidoProveedorRoutes); // ✅ NUEVA RUTA AÑADIDA
+router.use("/inventario", inventarioRoutes); // ✅ NUEVA RUTA AÑADIDA
 export default router;

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 03-11-2025 a las 20:59:51
+-- Tiempo de generación: 09-11-2025 a las 18:20:32
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -225,6 +225,31 @@ INSERT INTO `metodo_pago` (`id_metodo_pago`, `metodo_pago`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `movimiento_stock`
+--
+
+CREATE TABLE `movimiento_stock` (
+  `id_movimiento` int(11) NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `tipo_movimiento` enum('ingreso','egreso','ajuste','venta','devolucion') NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
+  `descripcion` varchar(255) DEFAULT NULL,
+  `id_usuario` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `movimiento_stock`
+--
+
+INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento`, `cantidad`, `fecha`, `descripcion`, `id_usuario`) VALUES
+(1, 1, 'ingreso', 50, '2025-11-04 10:00:00', 'Ingreso inicial de bidones Agua Bella', 3),
+(2, 2, 'egreso', 10, '2025-11-04 11:30:00', 'Salida por venta #123', 3),
+(3, 3, 'ajuste', 5, '2025-11-04 14:15:00', 'Ajuste de inventario - productos dañados', 3);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `pais`
 --
 
@@ -296,7 +321,8 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (10, 'DNI', '61430576', 'Rodrigo Eduardo Meza Lomas', '918711805', 'Av. Bellavista 1055', NULL, 1, '2025-10-23 03:39:46'),
 (11, 'DNI', '83819371', 'michel ', '982638432', 'Jr.los cedros', '-12.2652765,-76.8639302', 1, '2025-10-26 22:28:02'),
 (12, 'DNI', '00000000', 'Luis Torres Paredes', '982837932', 'jr.los mangos ms 3 lt 2', NULL, 1, '2025-10-26 22:34:51'),
-(13, 'DNI', '76162729', 'Paolo Cesar Fumachi Lopez', '961739701', 'jr.los guayabos mz.12 lt.12', '', 1, '2025-10-28 03:36:35');
+(13, 'DNI', '76162729', 'Paolo Cesar Fumachi Lopez', '961739701', 'jr.los guayabos mz.12 lt.12', '', 1, '2025-10-28 03:36:35'),
+(16, 'DNI', '72839299', 'Cristina Valles caja', '965068226', 'av.urbanizacion', '', 1, '2025-11-06 14:56:45');
 
 -- --------------------------------------------------------
 
@@ -445,7 +471,8 @@ INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_
 (3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
 (5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
 (6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57'),
-(8, 'Juan', 'juan@gmail.com', '$2b$10$HGmkX1h9KB3TRMpAKzROY.jL3UBiBv54mTciKqpYnmXsMgJUvYGtO', 3, 1, 1, '2025-10-31 21:23:33', '2025-10-31 21:23:33');
+(8, 'Juan', 'juan@gmail.com', '$2b$10$HGmkX1h9KB3TRMpAKzROY.jL3UBiBv54mTciKqpYnmXsMgJUvYGtO', 3, 1, 1, '2025-10-31 21:23:33', '2025-10-31 21:23:33'),
+(9, 'Cristina', 'Maria@gmail.com', '$2b$10$5pvJ52Kktsve1.vPpF64Eu4xxwmdbWjxPsPfEm8wE7/5YysfAhAhm', 4, 16, 1, '2025-11-06 14:57:55', '2025-11-06 14:57:55');
 
 -- --------------------------------------------------------
 
@@ -475,9 +502,9 @@ CREATE TABLE `venta` (
 INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`) VALUES
 (2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-11-03 19:59:31'),
 (3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25'),
-(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 5, 1, 3, '', '2025-10-22 03:52:17', '2025-11-01 21:34:17'),
-(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 5, 1, 3, '', '2025-10-23 04:37:32', '2025-11-01 21:34:17'),
-(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 5, 1, 5, '', '2025-11-01 21:41:52', '2025-11-01 21:49:14'),
+(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 7, 1, 3, '', '2025-10-22 03:52:17', '2025-11-08 21:19:37'),
+(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41'),
+(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 7, 1, 5, '', '2025-11-01 21:41:52', '2025-11-08 21:19:45'),
 (7, 6, '2025-11-01', '16:46:29', 4.00, 1, 5, 3, 5, '', '2025-11-01 21:46:29', '2025-11-01 21:51:47'),
 (8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12');
 
@@ -574,6 +601,14 @@ ALTER TABLE `marcas`
 --
 ALTER TABLE `metodo_pago`
   ADD PRIMARY KEY (`id_metodo_pago`);
+
+--
+-- Indices de la tabla `movimiento_stock`
+--
+ALTER TABLE `movimiento_stock`
+  ADD PRIMARY KEY (`id_movimiento`),
+  ADD KEY `idx_movimiento_producto` (`id_producto`),
+  ADD KEY `idx_movimiento_usuario` (`id_usuario`);
 
 --
 -- Indices de la tabla `pais`
@@ -732,6 +767,12 @@ ALTER TABLE `metodo_pago`
   MODIFY `id_metodo_pago` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `movimiento_stock`
+--
+ALTER TABLE `movimiento_stock`
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT de la tabla `pais`
 --
 ALTER TABLE `pais`
@@ -747,7 +788,7 @@ ALTER TABLE `pedido_proveedor`
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -783,7 +824,7 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `venta`
@@ -824,6 +865,13 @@ ALTER TABLE `distrito`
 --
 ALTER TABLE `lote_producto`
   ADD CONSTRAINT `lote_producto_ibfk_1` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`);
+
+--
+-- Filtros para la tabla `movimiento_stock`
+--
+ALTER TABLE `movimiento_stock`
+  ADD CONSTRAINT `movimiento_stock_ibfk_1` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`),
+  ADD CONSTRAINT `movimiento_stock_ibfk_2` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`);
 
 --
 -- Filtros para la tabla `pedido_proveedor`

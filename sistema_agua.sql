@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-11-2025 a las 18:20:32
+-- Tiempo de generación: 10-11-2025 a las 18:02:05
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -66,7 +66,12 @@ INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social
 (3, 9, 'Gimnasio', 'Gimnasio Power Futal', 1, '2025-10-18 20:18:44'),
 (4, 10, 'Persona', NULL, 1, '2025-10-23 04:27:24'),
 (5, 11, 'Bodega', 'ncjaisnca', 1, '2025-10-26 22:28:02'),
-(6, 12, 'Persona', NULL, 1, '2025-10-26 22:34:51');
+(6, 12, 'Persona', NULL, 1, '2025-10-26 22:34:51'),
+(7, 20, 'Persona', NULL, 1, '2025-11-10 14:18:04'),
+(8, 21, 'Persona', NULL, 1, '2025-11-10 15:32:34'),
+(9, 23, 'Persona', NULL, 1, '2025-11-10 15:37:16'),
+(10, 24, 'Persona', NULL, 1, '2025-11-10 16:18:00'),
+(11, 25, 'Persona', NULL, 1, '2025-11-10 16:22:07');
 
 -- --------------------------------------------------------
 
@@ -245,7 +250,10 @@ CREATE TABLE `movimiento_stock` (
 INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento`, `cantidad`, `fecha`, `descripcion`, `id_usuario`) VALUES
 (1, 1, 'ingreso', 50, '2025-11-04 10:00:00', 'Ingreso inicial de bidones Agua Bella', 3),
 (2, 2, 'egreso', 10, '2025-11-04 11:30:00', 'Salida por venta #123', 3),
-(3, 3, 'ajuste', 5, '2025-11-04 14:15:00', 'Ajuste de inventario - productos dañados', 3);
+(3, 3, 'ajuste', 5, '2025-11-04 14:15:00', 'Ajuste de inventario - productos dañados', 3),
+(4, 2, 'ingreso', 100, '2025-11-09 21:54:22', 'Produccion de bidones', 9),
+(5, 3, 'ingreso', 500, '2025-11-09 21:55:16', 'Porduccion de agua bella', 9),
+(6, 4, 'ingreso', 400, '2025-11-09 22:10:57', 'se solicitado 400 paquetes de agua viña', 9);
 
 -- --------------------------------------------------------
 
@@ -294,8 +302,8 @@ CREATE TABLE `pedido_proveedor` (
 
 CREATE TABLE `persona` (
   `id_persona` int(11) NOT NULL,
-  `tipo_documento` enum('DNI','RUC','CE') NOT NULL,
-  `numero_documento` varchar(20) NOT NULL,
+  `tipo_documento` enum('DNI','RUC','CE','NO_ESPECIFICADO') NOT NULL DEFAULT 'NO_ESPECIFICADO',
+  `numero_documento` varchar(20) DEFAULT NULL,
   `nombre_completo` varchar(200) NOT NULL,
   `telefono` varchar(20) DEFAULT NULL,
   `direccion` varchar(200) DEFAULT NULL,
@@ -320,9 +328,15 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (9, 'DNI', '44443222', 'Diego Fabricio Chavarry Macuyama', '986472315', 'Jr. Deportes 333', '-12.046374,-77.042793', 1, '2025-10-18 20:18:44'),
 (10, 'DNI', '61430576', 'Rodrigo Eduardo Meza Lomas', '918711805', 'Av. Bellavista 1055', NULL, 1, '2025-10-23 03:39:46'),
 (11, 'DNI', '83819371', 'michel ', '982638432', 'Jr.los cedros', '-12.2652765,-76.8639302', 1, '2025-10-26 22:28:02'),
-(12, 'DNI', '00000000', 'Luis Torres Paredes', '982837932', 'jr.los mangos ms 3 lt 2', NULL, 1, '2025-10-26 22:34:51'),
+(12, 'DNI', '73910292', 'Luis Torres Paredes', '982837932', 'jr.los mangos ms 3 lt 2', NULL, 1, '2025-10-26 22:34:51'),
 (13, 'DNI', '76162729', 'Paolo Cesar Fumachi Lopez', '961739701', 'jr.los guayabos mz.12 lt.12', '', 1, '2025-10-28 03:36:35'),
-(16, 'DNI', '72839299', 'Cristina Valles caja', '965068226', 'av.urbanizacion', '', 1, '2025-11-06 14:56:45');
+(16, 'DNI', '72839299', 'Leydi', '965068226', 'av.urbanizacion', '', 1, '2025-11-06 14:56:45'),
+(20, 'DNI', '71938290', 'Dennys gongora Farina', '988728323', 'Jr.28 de julio', NULL, 1, '2025-11-10 14:18:04'),
+(21, 'DNI', '72621231', 'Elizabeth lopez', '917566979', 'jr.los naranjanos', NULL, 1, '2025-11-10 15:32:34'),
+(22, 'DNI', '72829020', 'Jose manuela Rojas Panduro', '988172822', 'av. centenario 300', '', 1, '2025-11-10 15:33:37'),
+(23, 'DNI', '71312341', 'Felix Reategui Lopez', '924121212', 'av.tupac amaru ', NULL, 1, '2025-11-10 15:37:16'),
+(24, 'NO_ESPECIFICADO', 'TEMP-1762791480853-y', 'Julio Carlos Santillama', '945232411', 'jr.las flores mz.12 lt.5', NULL, 1, '2025-11-10 16:18:00'),
+(25, 'NO_ESPECIFICADO', 'TEMP-1762791727082-y', 'Cristiano Ronaldo dos Santos Aveiro', '927810192', 'Av. Centenario 524, Pucallpa 25000', NULL, 1, '2025-11-10 16:22:07');
 
 -- --------------------------------------------------------
 
@@ -352,10 +366,10 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 94, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
-(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 80, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 187, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
-(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 150, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 91, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 177, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 671, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -506,7 +520,13 @@ INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_met
 (5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41'),
 (6, 2, '2025-11-01', '16:41:52', 60.00, 1, 7, 1, 5, '', '2025-11-01 21:41:52', '2025-11-08 21:19:45'),
 (7, 6, '2025-11-01', '16:46:29', 4.00, 1, 5, 3, 5, '', '2025-11-01 21:46:29', '2025-11-01 21:51:47'),
-(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12');
+(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12'),
+(9, 3, '2025-11-09', '16:13:58', 13.50, 1, 8, 1, 3, '', '2025-11-09 21:13:58', '2025-11-09 21:17:36'),
+(10, 3, '2025-11-09', '16:22:15', 22.00, 1, 5, 1, 5, '', '2025-11-09 21:22:15', '2025-11-09 21:33:25'),
+(11, 3, '2025-11-09', '16:39:24', 8.00, 1, 8, 1, 5, ' CANCELACIÓN REPARTIDOR: no se encuentra en domicilio', '2025-11-09 21:39:24', '2025-11-09 21:45:45'),
+(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 4, NULL, 5, '', '2025-11-09 22:14:48', '2025-11-09 22:15:19'),
+(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 4, NULL, 5, '', '2025-11-09 22:17:07', '2025-11-09 22:22:50'),
+(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 5, 1, 3, '', '2025-11-10 16:25:35', '2025-11-10 16:26:23');
 
 -- --------------------------------------------------------
 
@@ -534,7 +554,15 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (4, 5, 1, 2, 4.00),
 (5, 6, 3, 10, 6.00),
 (6, 7, 1, 1, 4.00),
-(7, 8, 3, 3, 6.00);
+(7, 8, 3, 3, 6.00),
+(8, 9, 2, 3, 4.50),
+(9, 10, 1, 1, 4.00),
+(10, 10, 3, 3, 6.00),
+(11, 11, 1, 2, 4.00),
+(12, 12, 3, 4, 6.00),
+(13, 13, 3, 3, 6.00),
+(14, 14, 3, 6, 6.00),
+(15, 14, 4, 2, 7.50);
 
 --
 -- Índices para tablas volcadas
@@ -722,7 +750,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -770,7 +798,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`
@@ -788,7 +816,7 @@ ALTER TABLE `pedido_proveedor`
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -830,13 +858,13 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Restricciones para tablas volcadas

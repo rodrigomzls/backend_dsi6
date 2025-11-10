@@ -28,5 +28,7 @@ router.patch('/:id/password', verifyToken, usuarioController.changeUserPassword)
 
 // Eliminar usuario (admin)
 router.delete('/:id', verifyToken, requireRole([1]), usuarioController.deleteUser);
+// Actualizar usuario completo (admin)
+router.patch('/:id', verifyToken, requireRole([1]), usuarioController.updateUser);
 
 export default router;

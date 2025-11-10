@@ -64,6 +64,7 @@ export const getClienteById = async (req, res) => {
 };
 
 // Crear nuevo cliente
+// Crear nuevo cliente
 export const createCliente = async (req, res) => {
   const connection = await db.getConnection();
   
@@ -81,11 +82,26 @@ export const createCliente = async (req, res) => {
       razon_social
     } = req.body;
 
+    // Validaciones básicas
+    if (!nombre || !telefono) {
+      return res.status(400).json({ message: "Nombre y teléfono son requeridos" });
+    }
+
+    // Generar número de documento automático si está vacío
+    let documentoFinal = dni;
+    let tipoDocumentoFinal = tipo_documento;
+
+    if (!documentoFinal || documentoFinal.trim() === '') {
+      // Generar documento temporal único
+      documentoFinal = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      tipoDocumentoFinal = 'NO_ESPECIFICADO';
+    }
+
     // 1. Insertar en tabla persona
     const [personaResult] = await connection.query(
       `INSERT INTO persona (tipo_documento, numero_documento, nombre_completo, telefono, direccion, coordenadas) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [tipo_documento, dni, nombre, telefono, direccion, coordenadas || null]
+      [tipoDocumentoFinal, documentoFinal, nombre, telefono, direccion || '', coordenadas || null]
     );
 
     const personaId = personaResult.insertId;
@@ -99,8 +115,30 @@ export const createCliente = async (req, res) => {
 
     await connection.commit();
 
+    // Obtener el cliente recién creado para devolverlo
+    const [nuevoCliente] = await connection.query(`
+      SELECT 
+        c.id_cliente as id,
+        p.tipo_documento,
+        p.numero_documento as dni,
+        p.nombre_completo as nombre,
+        p.telefono,
+        p.direccion,
+        p.coordenadas,
+        c.tipo_cliente,
+        c.razon_social,
+        p.nombre_completo,
+        p.activo,
+        p.fecha_registro
+      FROM cliente c
+      INNER JOIN persona p ON c.id_persona = p.id_persona
+      WHERE c.id_cliente = ?
+    `, [clienteResult.insertId]);
+
     res.status(201).json({
       id: clienteResult.insertId,
+      id_cliente: clienteResult.insertId,
+      ...nuevoCliente[0],
       message: "Cliente creado correctamente"
     });
 

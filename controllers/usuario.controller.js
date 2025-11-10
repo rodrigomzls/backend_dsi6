@@ -2,10 +2,13 @@ import bcrypt from 'bcryptjs';
 import db from '../config/db.js';
 
 // Listar todos los usuarios (solo admins)
+// En usuario.controller.js - método getAllUsers
+// En usuario.controller.js - método getAllUsers - CORREGIDO
 export const getAllUsers = async (req, res) => {
   try {
     const [rows] = await db.execute(
-      `SELECT u.id_usuario, u.nombre_usuario, u.email, u.id_rol, r.rol, u.activo, p.nombre_completo
+      `SELECT u.id_usuario, u.nombre_usuario, u.email, u.id_rol, r.rol, u.activo, 
+              u.id_persona, p.nombre_completo
        FROM usuario u
        LEFT JOIN rol r ON u.id_rol = r.id_rol
        LEFT JOIN persona p ON u.id_persona = p.id_persona`
@@ -18,6 +21,7 @@ export const getAllUsers = async (req, res) => {
 };
 
 // Obtener usuario por id
+// En usuario.controller.js - método getUserById - VERIFICAR
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -226,10 +230,129 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+// En usuario.controller.js - agregar este método
+// En usuario.controller.js - modificar el método updateUser
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre_usuario, email, password, id_rol, id_persona } = req.body;
+    
+    console.log('Datos recibidos para actualizar:', { nombre_usuario, email, id_rol, id_persona }); // Debug
+
+    // Verificar si el usuario existe
+    const [userExists] = await db.execute(
+      'SELECT * FROM usuario WHERE id_usuario = ?',
+      [id]
+    );
+    
+    if (userExists.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar si el nuevo nombre de usuario o email ya existen (excluyendo el usuario actual)
+    const [existing] = await db.execute(
+      'SELECT * FROM usuario WHERE (nombre_usuario = ? OR email = ?) AND id_usuario != ?',
+      [nombre_usuario, email, id]
+    );
+    
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Usuario o correo ya registrado' });
+    }
+
+    // ✅ NUEVA VALIDACIÓN: Verificar que id_persona existe si se proporciona
+    if (id_persona !== undefined && id_persona !== null) {
+      const [personaExists] = await db.execute(
+        'SELECT id_persona FROM persona WHERE id_persona = ? AND activo = 1',
+        [id_persona]
+      );
+      
+      if (personaExists.length === 0) {
+        return res.status(400).json({ message: 'La persona seleccionada no existe o está inactiva' });
+      }
+
+      // ✅ Verificar que la persona no esté asignada a otro usuario (excepto el actual)
+      const [personaEnUso] = await db.execute(
+        'SELECT id_usuario FROM usuario WHERE id_persona = ? AND id_usuario != ?',
+        [id_persona, id]
+      );
+      
+      if (personaEnUso.length > 0) {
+        return res.status(400).json({ message: 'La persona ya está asignada a otro usuario' });
+      }
+    }
+
+    let updateFields = [];
+    let updateValues = [];
+
+    // Construir dinámicamente la consulta UPDATE
+    if (nombre_usuario !== undefined) {
+      updateFields.push('nombre_usuario = ?');
+      updateValues.push(nombre_usuario);
+    }
+    
+    if (email !== undefined) {
+      updateFields.push('email = ?');
+      updateValues.push(email);
+    }
+    
+    if (id_rol !== undefined) {
+      updateFields.push('id_rol = ?');
+      updateValues.push(id_rol);
+    }
+    
+    if (id_persona !== undefined) {
+      updateFields.push('id_persona = ?');
+      updateValues.push(id_persona);
+    }
+    
+    // Si se proporciona nueva contraseña, hashearla
+    if (password && password.trim() !== '') {
+      const hashed = await bcrypt.hash(password, 10);
+      updateFields.push('password = ?');
+      updateValues.push(hashed);
+    }
+
+    // Agregar fecha de actualización
+    updateFields.push('fecha_actualizacion = CURRENT_TIMESTAMP');
+
+    // Agregar el ID al final de los valores
+    updateValues.push(id);
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: 'No hay campos para actualizar' });
+    }
+
+    const query = `UPDATE usuario SET ${updateFields.join(', ')} WHERE id_usuario = ?`;
+    console.log('Query ejecutado:', query, updateValues); // Debug
+    
+    const [result] = await db.execute(query, updateValues);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json({ message: 'Usuario actualizado correctamente' });
+  } catch (error) {
+    console.error('Error updateUser:', error);
+    
+    // Mejorar mensaje de error
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({ 
+        message: 'Error de integridad referencial: La persona seleccionada no existe' 
+      });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+
+// Al final de usuario.controller.js - VERIFICAR EXPORT
 export default {
   getAllUsers,
   getUserById,
   createUser,
+  updateUser,
   updateUserRole,
   toggleUserActive,
   changeUserPassword,

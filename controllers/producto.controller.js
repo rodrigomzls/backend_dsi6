@@ -7,7 +7,7 @@ export const getProductos = async (req, res) => {
     
     // Mapear los nombres de columnas para el frontend
     const productosMapeados = rows.map(producto => ({
-      id: producto.id_producto,
+      id_producto: producto.id_producto,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precio: producto.precio,
@@ -35,7 +35,7 @@ export const getProductoById = async (req, res) => {
     const producto = rows[0];
     // Mapear nombres de columnas
     const productoMapeado = {
-      id: producto.id_producto,
+      id_producto: producto.id_producto,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precio: producto.precio,

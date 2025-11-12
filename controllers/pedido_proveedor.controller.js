@@ -114,7 +114,9 @@ export const getPedidoProveedorById = async (req, res) => {
   }
 };
 
-// Crear nuevo pedido a proveedor
+// src/controllers/pedido_proveedor.controller.js - CORREGIDO
+
+// Crear nuevo pedido a proveedor - VERSIÓN CORREGIDA
 export const createPedidoProveedor = async (req, res) => {
   const connection = await db.getConnection();
   try {
@@ -129,7 +131,13 @@ export const createPedidoProveedor = async (req, res) => {
       costo_unitario 
     } = req.body;
 
-    // Validar que el proveedor exista
+    // Validaciones
+    if (!id_proveedor || !id_producto || !fecha || !cantidad) {
+      await connection.rollback();
+      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
+
+    // Validar proveedor
     const [proveedorRows] = await connection.query(
       "SELECT id_proveedor FROM proveedor WHERE id_proveedor = ? AND activo = 1",
       [id_proveedor]
@@ -140,7 +148,7 @@ export const createPedidoProveedor = async (req, res) => {
       return res.status(404).json({ message: "Proveedor no encontrado" });
     }
 
-    // Validar que el producto exista
+    // Validar producto
     const [productoRows] = await connection.query(
       "SELECT id_producto FROM producto WHERE id_producto = ? AND activo = 1",
       [id_producto]
@@ -151,22 +159,60 @@ export const createPedidoProveedor = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    // Calcular total
-    const total = cantidad * (costo_unitario || 0);
+    // Calcular total CORREGIDO
+    const total = parseFloat(cantidad) * parseFloat(costo_unitario || 0);
 
     // Insertar el pedido
     const [result] = await connection.query(
       `INSERT INTO pedido_proveedor 
        (id_proveedor, id_producto, fecha, cantidad, id_estado_pedido, costo_unitario, total) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id_proveedor, id_producto, fecha, cantidad, id_estado_pedido, costo_unitario, total]
+      [id_proveedor, id_producto, fecha, cantidad, id_estado_pedido, costo_unitario || 0, total]
     );
 
     await connection.commit();
     
+    // Obtener el pedido creado con datos relacionados
+    const [newPedido] = await db.query(`
+      SELECT 
+        pp.*,
+        pr.razon_social as nombre_proveedor,
+        p.nombre as nombre_producto,
+        ep.estado as nombre_estado
+      FROM pedido_proveedor pp
+      LEFT JOIN proveedor pr ON pp.id_proveedor = pr.id_proveedor
+      LEFT JOIN producto p ON pp.id_producto = p.id_producto
+      LEFT JOIN estado_pedido_proveedor ep ON pp.id_estado_pedido = ep.id_estado_pedido
+      WHERE pp.id_pedido = ?`,
+      [result.insertId]
+    );
+    
+    const pedidoMapeado = newPedido[0] ? {
+      id_pedido: newPedido[0].id_pedido,
+      id_proveedor: newPedido[0].id_proveedor,
+      id_producto: newPedido[0].id_producto,
+      fecha: newPedido[0].fecha,
+      cantidad: newPedido[0].cantidad,
+      id_estado_pedido: newPedido[0].id_estado_pedido,
+      costo_unitario: parseFloat(newPedido[0].costo_unitario) || 0,
+      total: parseFloat(newPedido[0].total) || 0,
+      fecha_creacion: newPedido[0].fecha_creacion,
+      fecha_actualizacion: newPedido[0].fecha_actualizacion,
+      proveedor: {
+        razon_social: newPedido[0].nombre_proveedor
+      },
+      producto: {
+        nombre: newPedido[0].nombre_producto
+      },
+      estado: {
+        id_estado_pedido: newPedido[0].id_estado_pedido,
+        estado: newPedido[0].nombre_estado
+      }
+    } : null;
+
     res.status(201).json({ 
-      id_pedido: result.insertId,
-      message: "Pedido a proveedor creado correctamente" 
+      message: "Pedido a proveedor creado correctamente",
+      pedido: pedidoMapeado
     });
   } catch (error) {
     await connection.rollback();

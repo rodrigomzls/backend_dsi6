@@ -105,69 +105,153 @@ export const getVentaById = async (req, res) => {
 // En venta.controller.js - mejora las validaciones de detalles
 // En createVenta - MODIFICAR para manejar lotes específicos
 export const createVenta = async (req, res) => {
+  console.log('🔍 REQ.BODY COMPLETO:', JSON.stringify(req.body, null, 2));
+  console.log('🔍 REQ.USER:', req.user);
+  
   const connection = await db.getConnection();
   
   try {
     await connection.beginTransaction();
 
+      // ✅ 4. SOLUCIÓN ALTERNATIVA TEMPORAL - Agrega esta función al principio
+  // ✅ FUNCIÓN MEJORADA DE SANITIZACIÓN
+const sanitizeParams = (params) => {
+  return params.map(param => {
+    if (param === undefined || param === '') {
+      console.warn('⚠️  Parámetro undefined o vacío detectado, convirtiendo a null');
+      return null;
+    }
+    // Si es string, limpiar espacios
+    if (typeof param === 'string') {
+      const cleaned = param.trim();
+      return cleaned === '' ? null : cleaned;
+    }
+    return param;
+  });
+};
+
+    // ✅ FUNCIÓN DE SEGURIDAD MEJORADA
+    const safeValue = (value, defaultValue = null) => {
+      if (value === undefined) {
+        console.log(`⚠️  Campo undefined detectado, usando valor por defecto: ${defaultValue}`);
+        return defaultValue;
+      }
+      return value;
+    };
+
     const {
       id_cliente,
       id_metodo_pago,
       id_estado_venta = 1,
-      id_repartidor = null,
+      id_repartidor,
       notas = '',
       detalles = []
     } = req.body;
 
-    // Validaciones (mantener las existentes)
-    if (!id_cliente || id_cliente === 0) {
+    // ✅ VALIDACIÓN Y CONVERSIÓN SEGURA CON DEBUGGING
+    console.log('🔍 VALIDANDO CAMPOS:');
+    
+    const clienteFinal = Number(id_cliente);
+    console.log(`   - id_cliente: ${id_cliente} -> ${clienteFinal} (tipo: ${typeof clienteFinal})`);
+
+    const metodoPagoFinal = Number(id_metodo_pago);
+    console.log(`   - id_metodo_pago: ${id_metodo_pago} -> ${metodoPagoFinal} (tipo: ${typeof metodoPagoFinal})`);
+
+    const estadoVentaFinal = Number(safeValue(id_estado_venta, 1));
+    console.log(`   - id_estado_venta: ${id_estado_venta} -> ${estadoVentaFinal} (tipo: ${typeof estadoVentaFinal})`);
+
+    const repartidorFinal = safeValue(id_repartidor, null);
+    console.log(`   - id_repartidor: ${id_repartidor} -> ${repartidorFinal} (tipo: ${typeof repartidorFinal})`);
+
+    const notasFinal = safeValue(notas, '');
+    console.log(`   - notas: "${notas}" -> "${notasFinal}" (tipo: ${typeof notasFinal})`);
+
+    // ✅ VERIFICAR QUE EL USUARIO EXISTA EN REQ.USER
+    if (!req.user || !req.user.id_usuario) {
+      console.log('❌ ERROR: req.user no existe o no tiene id_usuario');
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    const id_vendedor = req.user.id_usuario;
+    console.log(`   - id_vendedor: ${id_vendedor} (tipo: ${typeof id_vendedor})`);
+
+    // ✅ VALIDACIONES BÁSICAS MEJORADAS
+    if (!clienteFinal || clienteFinal === 0) {
       return res.status(400).json({ error: 'Cliente es requerido' });
     }
-    if (!id_metodo_pago) {
+    if (!metodoPagoFinal) {
       return res.status(400).json({ error: 'Método de pago es requerido' });
     }
     if (!detalles || detalles.length === 0) {
       return res.status(400).json({ error: 'Debe agregar al menos un producto' });
     }
 
+    // ✅ PREPARAR PARÁMETROS CON DEBUGGING
+    const params = [
+      clienteFinal, 
+      metodoPagoFinal, 
+      estadoVentaFinal, 
+      repartidorFinal, 
+      id_vendedor, 
+      notasFinal
+    ];
+
+    console.log('🔍 PARÁMETROS PARA INSERT VENTA:');
+    params.forEach((param, index) => {
+      console.log(`   [${index}]: ${param} (tipo: ${typeof param})`);
+    });
+
+    // ✅ VERIFICAR SI HAY UNDEFINED EN LOS PARÁMETROS
+    const hasUndefined = params.some(param => param === undefined);
+    if (hasUndefined) {
+      console.log('❌ ERROR: Se encontró undefined en los parámetros:', params);
+      return res.status(400).json({ error: 'Parámetros inválidos: contiene undefined' });
+    }
+
     // 1. Crear la venta
+    console.log('🚀 EJECUTANDO INSERT EN VENTA...');
     const [result] = await connection.execute(`
       INSERT INTO venta (id_cliente, fecha, hora, total, id_metodo_pago, 
                        id_estado_venta, id_repartidor, id_vendedor, notas)
       VALUES (?, CURDATE(), CURTIME(), 0, ?, ?, ?, ?, ?)
-    `, [
-      id_cliente, 
-      id_metodo_pago, 
-      id_estado_venta, 
-      id_repartidor, 
-      req.user.id_usuario, 
-      notas
-    ]);
+    `, sanitizeParams([  // ✅ Aplica sanitizeParams aquí
+      clienteFinal, 
+      metodoPagoFinal, 
+      estadoVentaFinal, 
+      repartidorFinal, 
+      id_vendedor, 
+      notasFinal
+    ]));
 
     const id_venta = result.insertId;
     let total_venta = 0;
 
-    // 2. Procesar detalles y asignar lotes (FIFO)
+    console.log('🆕 Venta creada con ID:', id_venta);
+
+    // 2. Procesar detalles
     for (const detalle of detalles) {
       const { id_producto, cantidad, precio_unitario } = detalle;
       const subtotal = cantidad * precio_unitario;
       total_venta += subtotal;
 
+      console.log('📦 Procesando detalle:', { id_producto, cantidad, precio_unitario, subtotal });
+
       // Insertar detalle de venta
       const [detalleResult] = await connection.execute(`
         INSERT INTO venta_detalle (id_venta, id_producto, cantidad, precio_unitario)
         VALUES (?, ?, ?, ?)
-      `, [id_venta, id_producto, cantidad, precio_unitario]);
+      `, sanitizeParams([id_venta, id_producto, cantidad, precio_unitario])); // ✅ Aplica sanitizeParams
 
       const id_detalle_venta = detalleResult.insertId;
 
       // Obtener lotes disponibles (FIFO - por fecha de caducidad)
-      const [lotes] = await connection.execute(`
-        SELECT id_lote, cantidad_actual, numero_lote
-        FROM lote_producto 
-        WHERE id_producto = ? AND cantidad_actual > 0 AND activo = 1
-        ORDER BY fecha_caducidad ASC
-      `, [id_producto]);
+  // En la línea donde obtienes los lotes, también puedes aplicar sanitizeParams:
+const [lotes] = await connection.execute(`
+  SELECT id_lote, cantidad_actual, numero_lote
+  FROM lote_producto 
+  WHERE id_producto = ? AND cantidad_actual > 0 AND activo = 1
+  ORDER BY fecha_caducidad ASC
+`, sanitizeParams([id_producto])); // ← Agregar sanitizeParams aquí también
 
       let cantidadRestante = cantidad;
 
@@ -177,25 +261,41 @@ export const createVenta = async (req, res) => {
 
         const cantidadATomar = Math.min(cantidadRestante, lote.cantidad_actual);
         
+        console.log('🏷️ Asignando lote:', { 
+          id_detalle_venta, 
+          id_lote: lote.id_lote, 
+          cantidad: cantidadATomar,
+          numero_lote: lote.numero_lote 
+        });
+
+        // ✅ 3. VERIFICACIÓN DE VENTA_DETALLE_LOTE - Agrega esto aquí
+        if (!id_detalle_venta || id_detalle_venta === undefined) {
+          throw new Error(`id_detalle_venta es undefined para el producto ${id_producto}`);
+        }
+
+        if (!lote.id_lote || lote.id_lote === undefined) {
+          throw new Error(`id_lote es undefined para el lote ${lote.numero_lote}`);
+        }
+
         // Registrar en venta_detalle_lote
         await connection.execute(`
           INSERT INTO venta_detalle_lote (id_detalle_venta, id_lote, cantidad)
           VALUES (?, ?, ?)
-        `, [id_detalle_venta, lote.id_lote, cantidadATomar]);
+        `, sanitizeParams([id_detalle_venta, lote.id_lote, cantidadATomar])); // ✅ Aplica sanitizeParams
 
         // Actualizar stock del lote
         await connection.execute(`
           UPDATE lote_producto 
           SET cantidad_actual = cantidad_actual - ? 
           WHERE id_lote = ?
-        `, [cantidadATomar, lote.id_lote]);
+        `, sanitizeParams([cantidadATomar, lote.id_lote])); // ✅ Aplica sanitizeParams
 
         // Registrar movimiento de stock por lote
         await connection.execute(`
           INSERT INTO movimiento_stock 
           (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, id_lote)
           VALUES (?, 'egreso', ?, 'Venta #${id_venta} - Lote ${lote.numero_lote}', ?, ?)
-        `, [id_producto, cantidadATomar, req.user.id_usuario, lote.id_lote]);
+        `, sanitizeParams([id_producto, cantidadATomar, id_vendedor, lote.id_lote])); // ✅ Aplica sanitizeParams
 
         cantidadRestante -= cantidadATomar;
       }
@@ -205,7 +305,7 @@ export const createVenta = async (req, res) => {
         UPDATE producto 
         SET stock = stock - ? 
         WHERE id_producto = ?
-      `, [cantidad, id_producto]);
+      `, sanitizeParams([cantidad, id_producto])); // ✅ Aplica sanitizeParams
 
       // Verificar si hay suficiente stock
       if (cantidadRestante > 0) {
@@ -216,9 +316,11 @@ export const createVenta = async (req, res) => {
     // 3. Actualizar total de la venta
     await connection.execute(`
       UPDATE venta SET total = ? WHERE id_venta = ?
-    `, [total_venta, id_venta]);
+    `, sanitizeParams([total_venta, id_venta])); // ✅ Aplica sanitizeParams
 
     await connection.commit();
+
+    console.log('✅ Venta completada exitosamente:', id_venta);
 
     // 4. Devolver venta completa
     const [nuevaVenta] = await db.execute(`
@@ -238,6 +340,10 @@ export const createVenta = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error('❌ Error en createVenta:', error);
+    
+    // ✅ INFORMACIÓN DETALLADA DEL ERROR
+    console.error('📋 Stack trace completo:', error.stack);
+    
     res.status(500).json({ error: error.message });
   } finally {
     connection.release();

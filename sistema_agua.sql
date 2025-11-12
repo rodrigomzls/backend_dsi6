@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-11-2025 a las 04:44:22
+-- Tiempo de generación: 12-11-2025 a las 14:45:04
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -185,7 +185,8 @@ INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_cad
 (1, 1, 'LOTE-001-2025', '2026-03-30', 100, 100, '2025-10-18 20:18:44', 1),
 (2, 2, 'LOTE-002-2025', '2026-03-30', 80, 80, '2025-10-18 20:18:44', 1),
 (3, 3, 'LOTE-003-2025', '2026-03-30', 200, 200, '2025-10-18 20:18:44', 1),
-(4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1);
+(4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1),
+(5, 1, 'L-2025Z', '2026-05-11', 100, 100, '2025-11-12 05:34:20', 1);
 
 -- --------------------------------------------------------
 
@@ -240,22 +241,21 @@ CREATE TABLE `movimiento_stock` (
   `cantidad` int(11) NOT NULL,
   `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
   `descripcion` varchar(255) DEFAULT NULL,
-  `id_usuario` int(11) DEFAULT NULL
+  `id_usuario` int(11) DEFAULT NULL,
+  `id_lote` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `movimiento_stock`
 --
 
-INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento`, `cantidad`, `fecha`, `descripcion`, `id_usuario`) VALUES
-(1, 1, 'ingreso', 50, '2025-11-04 10:00:00', 'Ingreso inicial de bidones Agua Bella', 3),
-(2, 2, 'egreso', 10, '2025-11-04 11:30:00', 'Salida por venta #123', 3),
-(3, 3, 'ajuste', 5, '2025-11-04 14:15:00', 'Ajuste de inventario - productos dañados', 3),
-(4, 2, 'ingreso', 100, '2025-11-09 21:54:22', 'Produccion de bidones', 9),
-(5, 3, 'ingreso', 500, '2025-11-09 21:55:16', 'Porduccion de agua bella', 9),
-(6, 4, 'ingreso', 400, '2025-11-09 22:10:57', 'se solicitado 400 paquetes de agua viña', 9),
-(7, 1, 'ingreso', 100, '2025-11-10 18:33:02', 'Se ingreso 100 bidones de agua', 9),
-(8, 3, 'ingreso', 100, '2025-11-10 19:09:23', 'fdzgg', 9);
+INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento`, `cantidad`, `fecha`, `descripcion`, `id_usuario`, `id_lote`) VALUES
+(4, 2, 'ingreso', 100, '2025-11-09 21:54:22', 'Produccion de bidones', 9, 2),
+(5, 3, 'ingreso', 500, '2025-11-09 21:55:16', 'Porduccion de agua bella', 9, 3),
+(6, 4, 'ingreso', 400, '2025-11-09 22:10:57', 'se solicitado 400 paquetes de agua viña', 9, 4),
+(7, 1, 'ingreso', 100, '2025-11-10 18:33:02', 'Se ingreso 100 bidones de agua', 9, 1),
+(8, 3, 'ingreso', 100, '2025-11-10 19:09:23', 'fdzgg', 9, 3),
+(9, 1, 'ingreso', 100, '2025-11-12 05:34:20', 'Ingreso por creación de lote L-2025Z', 9, NULL);
 
 -- --------------------------------------------------------
 
@@ -368,9 +368,9 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 191, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
-(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 177, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 771, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 241, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 187, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 776, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
 (4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
@@ -566,6 +566,19 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (14, 14, 3, 6, 6.00),
 (15, 14, 4, 2, 7.50);
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `venta_detalle_lote`
+--
+
+CREATE TABLE `venta_detalle_lote` (
+  `id_venta_detalle_lote` int(11) NOT NULL,
+  `id_detalle_venta` int(11) NOT NULL,
+  `id_lote` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Índices para tablas volcadas
 --
@@ -638,7 +651,8 @@ ALTER TABLE `metodo_pago`
 ALTER TABLE `movimiento_stock`
   ADD PRIMARY KEY (`id_movimiento`),
   ADD KEY `idx_movimiento_producto` (`id_producto`),
-  ADD KEY `idx_movimiento_usuario` (`id_usuario`);
+  ADD KEY `idx_movimiento_usuario` (`id_usuario`),
+  ADD KEY `fk_movimiento_lote` (`id_lote`);
 
 --
 -- Indices de la tabla `pais`
@@ -739,6 +753,14 @@ ALTER TABLE `venta_detalle`
   ADD KEY `idx_venta_detalle_producto` (`id_producto`);
 
 --
+-- Indices de la tabla `venta_detalle_lote`
+--
+ALTER TABLE `venta_detalle_lote`
+  ADD PRIMARY KEY (`id_venta_detalle_lote`),
+  ADD KEY `idx_venta_detalle` (`id_detalle_venta`),
+  ADD KEY `idx_lote` (`id_lote`);
+
+--
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
@@ -782,7 +804,7 @@ ALTER TABLE `estado_venta`
 -- AUTO_INCREMENT de la tabla `lote_producto`
 --
 ALTER TABLE `lote_producto`
-  MODIFY `id_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `marcas`
@@ -800,7 +822,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`
@@ -869,6 +891,12 @@ ALTER TABLE `venta_detalle`
   MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
+-- AUTO_INCREMENT de la tabla `venta_detalle_lote`
+--
+ALTER TABLE `venta_detalle_lote`
+  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Restricciones para tablas volcadas
 --
 
@@ -900,6 +928,7 @@ ALTER TABLE `lote_producto`
 -- Filtros para la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
+  ADD CONSTRAINT `fk_movimiento_lote` FOREIGN KEY (`id_lote`) REFERENCES `lote_producto` (`id_lote`),
   ADD CONSTRAINT `movimiento_stock_ibfk_1` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`),
   ADD CONSTRAINT `movimiento_stock_ibfk_2` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`);
 
@@ -961,6 +990,13 @@ ALTER TABLE `venta`
 ALTER TABLE `venta_detalle`
   ADD CONSTRAINT `venta_detalle_ibfk_1` FOREIGN KEY (`id_venta`) REFERENCES `venta` (`id_venta`) ON DELETE CASCADE,
   ADD CONSTRAINT `venta_detalle_ibfk_2` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`);
+
+--
+-- Filtros para la tabla `venta_detalle_lote`
+--
+ALTER TABLE `venta_detalle_lote`
+  ADD CONSTRAINT `venta_detalle_lote_ibfk_1` FOREIGN KEY (`id_detalle_venta`) REFERENCES `venta_detalle` (`id_detalle`) ON DELETE CASCADE,
+  ADD CONSTRAINT `venta_detalle_lote_ibfk_2` FOREIGN KEY (`id_lote`) REFERENCES `lote_producto` (`id_lote`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

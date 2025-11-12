@@ -98,27 +98,40 @@ export const getMovimientosByProducto = async (req, res) => {
   }
 };
 
-// Registrar nuevo movimiento
+// En createMovimiento - MODIFICAR para manejar lotes
 export const createMovimiento = async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
 
-    const { id_producto, tipo_movimiento, cantidad, descripcion } = req.body;
-    const id_usuario = req.user.id_usuario; // Del middleware verifyToken
+    const { id_producto, tipo_movimiento, cantidad, descripcion, id_lote = null } = req.body;
+    const id_usuario = req.user.id_usuario;
 
-    // Validar tipo de movimiento
-    const tiposValidos = ['ingreso', 'egreso', 'ajuste', 'venta', 'devolucion'];
+    // Validar tipo de movimiento (QUITAR 'venta')
+    const tiposValidos = ['ingreso', 'egreso', 'ajuste', 'devolucion'];
     if (!tiposValidos.includes(tipo_movimiento)) {
       return res.status(400).json({ message: "Tipo de movimiento no válido" });
     }
 
-    // Insertar el movimiento
+    // Si es un ingreso y no tiene lote, crear uno automáticamente
+    let loteId = id_lote;
+    if (tipo_movimiento === 'ingreso' && !id_lote) {
+      const numeroLote = `LOTE-AUTO-${Date.now()}`;
+      const [loteResult] = await connection.query(
+        `INSERT INTO lote_producto 
+         (id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_actual) 
+         VALUES (?, ?, DATE_ADD(CURDATE(), INTERVAL 1 YEAR), ?, ?)`,
+        [id_producto, numeroLote, cantidad, cantidad]
+      );
+      loteId = loteResult.insertId;
+    }
+
+    // Insertar el movimiento CON LOTE
     const [result] = await connection.query(
       `INSERT INTO movimiento_stock 
-       (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [id_producto, tipo_movimiento, cantidad, descripcion, id_usuario]
+       (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, id_lote) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, loteId]
     );
 
     // Actualizar stock del producto
@@ -128,10 +141,20 @@ export const createMovimiento = async (req, res) => {
       [stockModificacion, id_producto]
     );
 
+    // Si tiene lote, actualizar cantidad del lote
+    if (loteId) {
+      const loteModificacion = (tipo_movimiento === 'ingreso' || tipo_movimiento === 'devolucion') ? cantidad : -cantidad;
+      await connection.query(
+        `UPDATE lote_producto SET cantidad_actual = cantidad_actual + ? WHERE id_lote = ?`,
+        [loteModificacion, loteId]
+      );
+    }
+
     await connection.commit();
     
     res.status(201).json({ 
       id_movimiento: result.insertId,
+      id_lote: loteId,
       message: "Movimiento registrado correctamente" 
     });
   } catch (error) {
@@ -142,7 +165,6 @@ export const createMovimiento = async (req, res) => {
     connection.release();
   }
 };
-
 // ... métodos existentes
 
 // Actualizar movimiento

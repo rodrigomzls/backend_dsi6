@@ -107,6 +107,7 @@ export const getDashboardData = async (req, res) => {
 };
 
 // Generar reporte de stock
+// En inventario.controller.js - modificar el método generarReporteStock
 export const generarReporteStock = async (req, res) => {
   try {
     const { tipoReporte, fechaInicio, fechaFin } = req.body;
@@ -156,25 +157,58 @@ export const generarReporteStock = async (req, res) => {
       WHERE p.activo = 1
     `);
 
-    // Si hay fechas, obtener movimientos en ese rango
+    // ✅ CORRECCIÓN: Obtener movimientos con manejo correcto de fechas
     let movimientos = [];
     if (fechaInicio && fechaFin) {
+      // Ajustar la fecha fin para incluir todo el día
+      const fechaFinAjustada = new Date(fechaFin);
+      fechaFinAjustada.setDate(fechaFinAjustada.getDate() + 1);
+      const fechaFinStr = fechaFinAjustada.toISOString().split('T')[0];
+      
+      console.log('Filtro movimientos:', {
+        fechaInicio,
+        fechaFin,
+        fechaFinAjustada: fechaFinStr
+      });
+
       const [movimientosRows] = await db.query(`
         SELECT 
           m.tipo_movimiento,
           COUNT(*) as cantidad_movimientos,
           SUM(m.cantidad) as total_cantidad
         FROM movimiento_stock m
-        WHERE m.fecha BETWEEN ? AND ?
+        WHERE m.fecha >= ? AND m.fecha < ?
         GROUP BY m.tipo_movimiento
-      `, [fechaInicio, fechaFin]);
+      `, [fechaInicio, fechaFinStr]);
       
       movimientos = movimientosRows;
+
+      // ✅ Obtener también el conteo total de movimientos en el período
+      const [totalMovimientosRows] = await db.query(`
+        SELECT COUNT(*) as total
+        FROM movimiento_stock 
+        WHERE fecha >= ? AND fecha < ?
+      `, [fechaInicio, fechaFinStr]);
+
+      console.log('Movimientos encontrados:', {
+        total: totalMovimientosRows[0]?.total || 0,
+        porTipo: movimientos
+      });
+    } else {
+      // Si no hay filtro de fechas, obtener todos los movimientos
+      const [totalMovimientosRows] = await db.query(`
+        SELECT COUNT(*) as total FROM movimiento_stock
+      `);
+      console.log('Total movimientos sin filtro:', totalMovimientosRows[0]?.total || 0);
     }
 
     res.json({
       productos,
-      metricas: metricas[0],
+      metricas: {
+        ...metricas[0],
+        // ✅ Incluir el total de movimientos en las métricas
+        total_movimientos: movimientos.reduce((sum, mov) => sum + (mov.cantidad_movimientos || 0), 0)
+      },
       movimientos,
       filtros: {
         tipoReporte,

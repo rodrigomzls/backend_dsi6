@@ -99,8 +99,26 @@ export const createLote = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { id_producto, numero_lote, fecha_vencimiento, cantidad_inicial } = req.body;
+    const { id_producto, numero_lote, fecha_caducidad, cantidad_inicial } = req.body;
     const id_usuario = req.user.id_usuario;
+
+    // ✅ DEBUG DETALLADO
+    console.log('📦 DATOS RECIBIDOS EN BACKEND:');
+    console.log('   - id_producto:', id_producto);
+    console.log('   - numero_lote:', numero_lote);
+    console.log('   - fecha_caducidad:', fecha_caducidad, '(tipo:', typeof fecha_caducidad, ')');
+    console.log('   - cantidad_inicial:', cantidad_inicial);
+    console.log('   - id_usuario:', id_usuario);
+
+    // Validar que todos los campos estén presentes
+    if (!fecha_caducidad) {
+      console.log('❌ ERROR: fecha_caducidad es null o undefined');
+      await connection.rollback();
+      return res.status(400).json({ 
+        message: "La fecha de caducidad es obligatoria",
+        details: `Fecha recibida: ${fecha_caducidad}`
+      });
+    }
 
     // Validar que el producto exista
     const [productoRows] = await connection.query(
@@ -129,7 +147,7 @@ export const createLote = async (req, res) => {
       `INSERT INTO lote_producto 
        (id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_actual) 
        VALUES (?, ?, ?, ?, ?)`,
-      [id_producto, numero_lote, fecha_vencimiento, cantidad_inicial, cantidad_inicial]
+      [id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_inicial]
     );
 
     // Registrar movimiento de stock (ingreso)
@@ -152,10 +170,14 @@ export const createLote = async (req, res) => {
       id_lote: result.insertId,
       message: "Lote creado correctamente" 
     });
-  } catch (error) {
+   } catch (error) {
     await connection.rollback();
-    console.error("Error al crear lote:", error);
-    res.status(500).json({ message: "Error al crear lote" });
+    console.error("❌ ERROR DETALLADO al crear lote:", error);
+    res.status(500).json({ 
+      message: "Error al crear lote",
+      error: error.message,
+      sql: error.sql 
+    });
   } finally {
     connection.release();
   }
@@ -167,7 +189,7 @@ export const updateLote = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { id_producto, numero_lote, fecha_vencimiento, cantidad_actual } = req.body;
+    const { id_producto, numero_lote, fecha_caducidad, cantidad_actual } = req.body;
     const id_lote = req.params.id;
 
     // Verificar que el lote existe
@@ -199,7 +221,7 @@ export const updateLote = async (req, res) => {
       `UPDATE lote_producto 
        SET id_producto = ?, numero_lote = ?, fecha_caducidad = ?, cantidad_actual = ?
        WHERE id_lote = ?`,
-      [id_producto, numero_lote, fecha_vencimiento, cantidad_actual, id_lote]
+      [id_producto, numero_lote, fecha_caducidad, cantidad_actual, id_lote]
     );
 
     // Si cambió la cantidad, registrar movimiento de ajuste

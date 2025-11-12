@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 10-11-2025 a las 18:02:05
+-- Tiempo de generación: 12-11-2025 a las 04:44:22
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -182,10 +182,10 @@ CREATE TABLE `lote_producto` (
 --
 
 INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_caducidad`, `cantidad_inicial`, `cantidad_actual`, `fecha_creacion`, `activo`) VALUES
-(1, 1, 'LOTE-001-2024', '2024-12-31', 100, 100, '2025-10-18 20:18:44', 1),
-(2, 2, 'LOTE-002-2024', '2024-12-31', 80, 80, '2025-10-18 20:18:44', 1),
-(3, 3, 'LOTE-003-2024', '2024-06-30', 200, 200, '2025-10-18 20:18:44', 1),
-(4, 4, 'LOTE-004-2024', '2024-06-30', 150, 150, '2025-10-18 20:18:44', 1);
+(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 100, '2025-10-18 20:18:44', 1),
+(2, 2, 'LOTE-002-2025', '2026-03-30', 80, 80, '2025-10-18 20:18:44', 1),
+(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 200, '2025-10-18 20:18:44', 1),
+(4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1);
 
 -- --------------------------------------------------------
 
@@ -236,7 +236,7 @@ INSERT INTO `metodo_pago` (`id_metodo_pago`, `metodo_pago`) VALUES
 CREATE TABLE `movimiento_stock` (
   `id_movimiento` int(11) NOT NULL,
   `id_producto` int(11) NOT NULL,
-  `tipo_movimiento` enum('ingreso','egreso','ajuste','venta','devolucion') NOT NULL,
+  `tipo_movimiento` enum('ingreso','egreso','ajuste','devolucion') NOT NULL,
   `cantidad` int(11) NOT NULL,
   `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
   `descripcion` varchar(255) DEFAULT NULL,
@@ -253,7 +253,9 @@ INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento
 (3, 3, 'ajuste', 5, '2025-11-04 14:15:00', 'Ajuste de inventario - productos dañados', 3),
 (4, 2, 'ingreso', 100, '2025-11-09 21:54:22', 'Produccion de bidones', 9),
 (5, 3, 'ingreso', 500, '2025-11-09 21:55:16', 'Porduccion de agua bella', 9),
-(6, 4, 'ingreso', 400, '2025-11-09 22:10:57', 'se solicitado 400 paquetes de agua viña', 9);
+(6, 4, 'ingreso', 400, '2025-11-09 22:10:57', 'se solicitado 400 paquetes de agua viña', 9),
+(7, 1, 'ingreso', 100, '2025-11-10 18:33:02', 'Se ingreso 100 bidones de agua', 9),
+(8, 3, 'ingreso', 100, '2025-11-10 19:09:23', 'fdzgg', 9);
 
 -- --------------------------------------------------------
 
@@ -366,9 +368,9 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 91, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 191, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
 (2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 177, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 671, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 771, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
 (4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
@@ -486,7 +488,7 @@ INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_
 (5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
 (6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57'),
 (8, 'Juan', 'juan@gmail.com', '$2b$10$HGmkX1h9KB3TRMpAKzROY.jL3UBiBv54mTciKqpYnmXsMgJUvYGtO', 3, 1, 1, '2025-10-31 21:23:33', '2025-10-31 21:23:33'),
-(9, 'Cristina', 'Maria@gmail.com', '$2b$10$5pvJ52Kktsve1.vPpF64Eu4xxwmdbWjxPsPfEm8wE7/5YysfAhAhm', 4, 16, 1, '2025-11-06 14:57:55', '2025-11-06 14:57:55');
+(9, 'Leydi', 'Leydi@gmail.com', '$2b$10$ty.pXvrTDQzQZ5ZzWAiHoe3Pfb4yKR5lW.qcxbpQdSE.YF3CAhmUa', 4, 16, 1, '2025-11-06 14:57:55', '2025-11-10 18:21:09');
 
 -- --------------------------------------------------------
 
@@ -798,7 +800,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`

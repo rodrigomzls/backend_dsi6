@@ -17,6 +17,7 @@ import movimientoStockRoutes from "./movimiento_stock.routes.js";
 import loteRoutes from "./lote.routes.js"; // ✅ NUEVA RUTA AÑADIDA
 import pedidoProveedorRoutes from "./pedido_proveedor.routes.js"; // ✅ NUEVA RUTA AÑADIDA
 import inventarioRoutes from "./inventario.routes.js"; // ✅ NUEVA RUTA AÑADIDA
+import insumoRoutes from "./insumo.routes.js";
 const router = express.Router();
 
 // Rutas públicas (sin autenticación)
@@ -42,4 +43,5 @@ router.use("/movimientos-stock", movimientoStockRoutes);
 router.use("/lotes", loteRoutes); // ✅ NUEVA RUTA AÑADIDA
 router.use("/pedidos-proveedor", pedidoProveedorRoutes); // ✅ NUEVA RUTA AÑADIDA
 router.use("/inventario", inventarioRoutes); // ✅ NUEVA RUTA AÑADIDA
+router.use("/insumos", insumoRoutes); // ✅ NUEVA RUTA AÑADIDA
 export default router;

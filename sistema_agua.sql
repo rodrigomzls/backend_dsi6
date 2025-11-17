@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-11-2025 a las 14:45:04
+-- Tiempo de generación: 14-11-2025 a las 16:14:58
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -71,7 +71,8 @@ INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social
 (8, 21, 'Persona', NULL, 1, '2025-11-10 15:32:34'),
 (9, 23, 'Persona', NULL, 1, '2025-11-10 15:37:16'),
 (10, 24, 'Persona', NULL, 1, '2025-11-10 16:18:00'),
-(11, 25, 'Persona', NULL, 1, '2025-11-10 16:22:07');
+(11, 25, 'Persona', NULL, 1, '2025-11-10 16:22:07'),
+(12, 27, 'Persona', NULL, 1, '2025-11-12 18:16:13');
 
 -- --------------------------------------------------------
 
@@ -163,6 +164,38 @@ INSERT INTO `estado_venta` (`id_estado_venta`, `estado`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `insumo`
+--
+
+CREATE TABLE `insumo` (
+  `id_insumo` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `unidad_medida` varchar(20) NOT NULL,
+  `costo_promedio` decimal(10,2) DEFAULT 0.00,
+  `stock_actual` int(11) DEFAULT 0,
+  `stock_minimo` int(11) DEFAULT 0,
+  `id_proveedor_principal` int(11) DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `insumo`
+--
+
+INSERT INTO `insumo` (`id_insumo`, `nombre`, `descripcion`, `unidad_medida`, `costo_promedio`, `stock_actual`, `stock_minimo`, `id_proveedor_principal`, `activo`, `fecha_creacion`) VALUES
+(1, 'Bidón plástico vacío 20L', 'Bidón de plástico vacío para envasar agua', 'unidades', 1.80, 0, 100, 1, 1, '2025-11-13 17:05:58'),
+(2, 'Botella PET 650ml', 'Botella PET vacía para agua 650ml', 'unidades', 0.25, 0, 500, 1, 1, '2025-11-13 17:05:58'),
+(3, 'Botella PET 600ml', 'Botella PET vacía para agua 600ml', 'unidades', 0.22, 0, 400, 1, 1, '2025-11-13 17:05:58'),
+(4, 'Tapa rosca plástica', 'Tapa de plástico para bidones y botellas', 'unidades', 0.08, 0, 1000, 1, 1, '2025-11-13 17:05:58'),
+(5, 'Etiqueta frontal Agua Bella', 'Etiqueta frontal para productos marca Bella', 'unidades', 0.03, 0, 2000, 1, 1, '2025-11-13 17:05:58'),
+(6, 'Etiqueta frontal Agua Viña', 'Etiqueta frontal para productos marca Viña', 'unidades', 0.03, 0, 1500, 1, 1, '2025-11-13 17:05:58'),
+(7, 'Sello de seguridad', 'Sello de seguridad para bidones', 'unidades', 0.15, 0, 300, 1, 1, '2025-11-13 17:05:58');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `lote_producto`
 --
 
@@ -182,18 +215,18 @@ CREATE TABLE `lote_producto` (
 --
 
 INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_caducidad`, `cantidad_inicial`, `cantidad_actual`, `fecha_creacion`, `activo`) VALUES
-(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 100, '2025-10-18 20:18:44', 1),
+(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 99, '2025-10-18 20:18:44', 1),
 (2, 2, 'LOTE-002-2025', '2026-03-30', 80, 80, '2025-10-18 20:18:44', 1),
-(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 200, '2025-10-18 20:18:44', 1),
+(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 196, '2025-10-18 20:18:44', 1),
 (4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1),
-(5, 1, 'L-2025Z', '2026-05-11', 100, 100, '2025-11-12 05:34:20', 1);
+(5, 1, 'L-2025Z', '2026-05-11', 100, 200, '2025-11-12 05:34:20', 1),
+(6, 2, 'L-202510', '2026-06-12', 50, 100, '2025-11-12 17:44:59', 1);
 
 -- --------------------------------------------------------
 
 --
 -- Estructura de tabla para la tabla `marcas`
 --
-
 CREATE TABLE `marcas` (
   `id_marca` int(11) NOT NULL,
   `nombre` varchar(100) NOT NULL
@@ -255,7 +288,10 @@ INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento
 (6, 4, 'ingreso', 400, '2025-11-09 22:10:57', 'se solicitado 400 paquetes de agua viña', 9, 4),
 (7, 1, 'ingreso', 100, '2025-11-10 18:33:02', 'Se ingreso 100 bidones de agua', 9, 1),
 (8, 3, 'ingreso', 100, '2025-11-10 19:09:23', 'fdzgg', 9, 3),
-(9, 1, 'ingreso', 100, '2025-11-12 05:34:20', 'Ingreso por creación de lote L-2025Z', 9, NULL);
+(10, 1, 'ingreso', 100, '2025-11-12 14:04:38', 'Ingreso de nuevo lote de 100 bidones  de agua bella', 9, 5),
+(12, 2, 'ingreso', 50, '2025-11-12 17:46:20', '', 9, 6),
+(13, 1, 'egreso', 1, '2025-11-12 20:58:45', 'Venta #28 - Lote LOTE-001-2025', 3, 1),
+(14, 3, 'egreso', 4, '2025-11-13 14:26:03', 'Venta #29 - Lote LOTE-003-2025', 3, 3);
 
 -- --------------------------------------------------------
 
@@ -286,14 +322,26 @@ INSERT INTO `pais` (`id_pais`, `pais`) VALUES
 CREATE TABLE `pedido_proveedor` (
   `id_pedido` int(11) NOT NULL,
   `id_proveedor` int(11) NOT NULL,
-  `id_producto` int(11) NOT NULL,
   `fecha` date NOT NULL,
-  `cantidad` int(11) NOT NULL,
   `id_estado_pedido` int(11) NOT NULL,
-  `costo_unitario` decimal(10,2) DEFAULT NULL,
-  `total` decimal(10,2) DEFAULT NULL,
   `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
-  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `total` decimal(10,2) DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `pedido_proveedor_detalle`
+--
+
+CREATE TABLE `pedido_proveedor_detalle` (
+  `id_detalle` int(11) NOT NULL,
+  `id_pedido` int(11) NOT NULL,
+  `id_insumo` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `costo_unitario` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) GENERATED ALWAYS AS (`cantidad` * `costo_unitario`) STORED
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -338,7 +386,9 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (22, 'DNI', '72829020', 'Jose manuela Rojas Panduro', '988172822', 'av. centenario 300', '', 1, '2025-11-10 15:33:37'),
 (23, 'DNI', '71312341', 'Felix Reategui Lopez', '924121212', 'av.tupac amaru ', NULL, 1, '2025-11-10 15:37:16'),
 (24, 'NO_ESPECIFICADO', 'TEMP-1762791480853-y', 'Julio Carlos Santillama', '945232411', 'jr.las flores mz.12 lt.5', NULL, 1, '2025-11-10 16:18:00'),
-(25, 'NO_ESPECIFICADO', 'TEMP-1762791727082-y', 'Cristiano Ronaldo dos Santos Aveiro', '927810192', 'Av. Centenario 524, Pucallpa 25000', NULL, 1, '2025-11-10 16:22:07');
+(25, 'NO_ESPECIFICADO', 'TEMP-1762791727082-y', 'Cristiano Ronaldo dos Santos Aveiro', '927810192', 'Av. Centenario 524, Pucallpa 25000', NULL, 1, '2025-11-10 16:22:07'),
+(26, 'DNI', '72022898', 'Raul Murrieta ', '928393833', 'jr.urubamba ', NULL, 1, '2025-11-12 17:28:01'),
+(27, 'NO_ESPECIFICADO', 'TEMP-1762971373153-0', 'raul portugal padilla', '930613571', 'Urbanizacion Imosa mz.A lt.9', NULL, 1, '2025-11-12 18:16:13');
 
 -- --------------------------------------------------------
 
@@ -368,9 +418,9 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 241, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
-(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 187, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 776, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 240, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 237, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 772, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
 (4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
@@ -393,7 +443,8 @@ CREATE TABLE `proveedor` (
 
 INSERT INTO `proveedor` (`id_proveedor`, `id_persona`, `razon_social`, `activo`, `fecha_registro`) VALUES
 (1, 4, 'Proveedor Agua Pura SAC', 1, '2025-10-18 20:18:44'),
-(2, 5, 'Insumos Beverage Perú', 1, '2025-10-18 20:18:44');
+(2, 5, 'Insumos Beverage Perú', 1, '2025-10-18 20:18:44'),
+(3, 26, 'Agua y Vida sac', 1, '2025-11-12 17:28:01');
 
 -- --------------------------------------------------------
 
@@ -526,9 +577,11 @@ INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_met
 (9, 3, '2025-11-09', '16:13:58', 13.50, 1, 8, 1, 3, '', '2025-11-09 21:13:58', '2025-11-09 21:17:36'),
 (10, 3, '2025-11-09', '16:22:15', 22.00, 1, 5, 1, 5, '', '2025-11-09 21:22:15', '2025-11-09 21:33:25'),
 (11, 3, '2025-11-09', '16:39:24', 8.00, 1, 8, 1, 5, ' CANCELACIÓN REPARTIDOR: no se encuentra en domicilio', '2025-11-09 21:39:24', '2025-11-09 21:45:45'),
-(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 4, NULL, 5, '', '2025-11-09 22:14:48', '2025-11-09 22:15:19'),
-(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 4, NULL, 5, '', '2025-11-09 22:17:07', '2025-11-09 22:22:50'),
-(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 5, 1, 3, '', '2025-11-10 16:25:35', '2025-11-10 16:26:23');
+(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 5, 1, 5, '', '2025-11-09 22:14:48', '2025-11-12 20:20:51'),
+(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 5, 1, 5, '', '2025-11-09 22:17:07', '2025-11-12 20:20:30'),
+(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 7, 1, 3, '', '2025-11-10 16:25:35', '2025-11-12 17:23:52'),
+(28, 1, '2025-11-12', '15:58:44', 4.00, 1, 5, 1, 3, NULL, '2025-11-12 20:58:44', '2025-11-12 20:59:53'),
+(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 1, NULL, 3, NULL, '2025-11-13 14:26:03', '2025-11-13 14:26:03');
 
 -- --------------------------------------------------------
 
@@ -564,7 +617,9 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (12, 12, 3, 4, 6.00),
 (13, 13, 3, 3, 6.00),
 (14, 14, 3, 6, 6.00),
-(15, 14, 4, 2, 7.50);
+(15, 14, 4, 2, 7.50),
+(16, 28, 1, 1, 4.00),
+(17, 29, 3, 4, 6.00);
 
 -- --------------------------------------------------------
 
@@ -578,6 +633,14 @@ CREATE TABLE `venta_detalle_lote` (
   `id_lote` int(11) NOT NULL,
   `cantidad` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `venta_detalle_lote`
+--
+
+INSERT INTO `venta_detalle_lote` (`id_venta_detalle_lote`, `id_detalle_venta`, `id_lote`, `cantidad`) VALUES
+(1, 16, 1, 1),
+(2, 17, 3, 4);
 
 --
 -- Índices para tablas volcadas
@@ -626,6 +689,14 @@ ALTER TABLE `estado_venta`
   ADD PRIMARY KEY (`id_estado_venta`);
 
 --
+-- Indices de la tabla `insumo`
+--
+ALTER TABLE `insumo`
+  ADD PRIMARY KEY (`id_insumo`),
+  ADD KEY `idx_insumo_activo` (`activo`),
+  ADD KEY `idx_insumo_proveedor` (`id_proveedor_principal`);
+
+--
 -- Indices de la tabla `lote_producto`
 --
 ALTER TABLE `lote_producto`
@@ -665,10 +736,17 @@ ALTER TABLE `pais`
 --
 ALTER TABLE `pedido_proveedor`
   ADD PRIMARY KEY (`id_pedido`),
-  ADD KEY `id_producto` (`id_producto`),
   ADD KEY `idx_pedido_proveedor` (`id_proveedor`),
   ADD KEY `idx_pedido_estado` (`id_estado_pedido`),
   ADD KEY `idx_pedido_fecha` (`fecha`);
+
+--
+-- Indices de la tabla `pedido_proveedor_detalle`
+--
+ALTER TABLE `pedido_proveedor_detalle`
+  ADD PRIMARY KEY (`id_detalle`),
+  ADD KEY `id_pedido` (`id_pedido`),
+  ADD KEY `id_insumo` (`id_insumo`);
 
 --
 -- Indices de la tabla `persona`
@@ -774,7 +852,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -801,10 +879,16 @@ ALTER TABLE `estado_venta`
   MODIFY `id_estado_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
+-- AUTO_INCREMENT de la tabla `insumo`
+--
+ALTER TABLE `insumo`
+  MODIFY `id_insumo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- AUTO_INCREMENT de la tabla `lote_producto`
 --
 ALTER TABLE `lote_producto`
-  MODIFY `id_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `marcas`
@@ -822,7 +906,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`
@@ -834,13 +918,19 @@ ALTER TABLE `pais`
 -- AUTO_INCREMENT de la tabla `pedido_proveedor`
 --
 ALTER TABLE `pedido_proveedor`
-  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `pedido_proveedor_detalle`
+--
+ALTER TABLE `pedido_proveedor_detalle`
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -852,7 +942,7 @@ ALTER TABLE `producto`
 -- AUTO_INCREMENT de la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
-  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `provincia`
@@ -882,19 +972,19 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle_lote`
 --
 ALTER TABLE `venta_detalle_lote`
-  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Restricciones para tablas volcadas
@@ -937,8 +1027,14 @@ ALTER TABLE `movimiento_stock`
 --
 ALTER TABLE `pedido_proveedor`
   ADD CONSTRAINT `pedido_proveedor_ibfk_1` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedor` (`id_proveedor`),
-  ADD CONSTRAINT `pedido_proveedor_ibfk_2` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`),
   ADD CONSTRAINT `pedido_proveedor_ibfk_3` FOREIGN KEY (`id_estado_pedido`) REFERENCES `estado_pedido_proveedor` (`id_estado_pedido`);
+
+--
+-- Filtros para la tabla `pedido_proveedor_detalle`
+--
+ALTER TABLE `pedido_proveedor_detalle`
+  ADD CONSTRAINT `pedido_proveedor_detalle_ibfk_1` FOREIGN KEY (`id_pedido`) REFERENCES `pedido_proveedor` (`id_pedido`) ON DELETE CASCADE,
+  ADD CONSTRAINT `pedido_proveedor_detalle_ibfk_2` FOREIGN KEY (`id_insumo`) REFERENCES `insumo` (`id_insumo`);
 
 --
 -- Filtros para la tabla `producto`

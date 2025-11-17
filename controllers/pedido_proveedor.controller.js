@@ -2,6 +2,8 @@
 import db from "../config/db.js";
 
 // Obtener todos los pedidos a proveedor CON DETALLES
+// Optimización en pedido_proveedor.controller.js
+// src/controllers/pedido_proveedor.controller.js - VERSIÓN CORREGIDA
 export const getPedidosProveedor = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -19,13 +21,20 @@ export const getPedidosProveedor = async (req, res) => {
       LEFT JOIN proveedor pr ON pp.id_proveedor = pr.id_proveedor
       LEFT JOIN estado_pedido_proveedor ep ON pp.id_estado_pedido = ep.id_estado_pedido
       ORDER BY pp.fecha DESC, pp.fecha_creacion DESC`);
-    
+    console.log('📊 Pedidos obtenidos del backend:');
+    rows.forEach(pedido => {
+      console.log(`   Pedido ${pedido.id_pedido}: Estado ID = ${pedido.id_estado_pedido}, Estado = ${pedido.nombre_estado}`);
+    });
     // Obtener detalles para cada pedido
     const pedidosConDetalles = await Promise.all(
       rows.map(async (pedido) => {
         const [detalles] = await db.query(`
           SELECT 
-            ppd.*,
+            ppd.id_detalle,
+            ppd.id_insumo,
+            ppd.cantidad,
+            ppd.costo_unitario,
+            ppd.subtotal,
             i.nombre as insumo_nombre,
             i.unidad_medida
           FROM pedido_proveedor_detalle ppd
@@ -48,17 +57,7 @@ export const getPedidosProveedor = async (req, res) => {
             id_estado_pedido: pedido.id_estado_pedido,
             estado: pedido.nombre_estado
           },
-          detalles: detalles.map(det => ({
-            id_detalle: det.id_detalle,
-            id_insumo: det.id_insumo,
-            cantidad: det.cantidad,
-            costo_unitario: parseFloat(det.costo_unitario) || 0,
-            subtotal: parseFloat(det.subtotal) || 0,
-            insumo: {
-              nombre: det.insumo_nombre,
-              unidad_medida: det.unidad_medida
-            }
-          }))
+          detalles: detalles || [] // ✅ Asegurar array vacío si no hay detalles
         };
       })
     );
@@ -69,7 +68,6 @@ export const getPedidosProveedor = async (req, res) => {
     res.status(500).json({ message: "Error al obtener pedidos a proveedor" });
   }
 };
-
 // Obtener pedido por ID
 export const getPedidoProveedorById = async (req, res) => {
   try {

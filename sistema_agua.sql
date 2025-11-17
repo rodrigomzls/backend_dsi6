@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 14-11-2025 a las 16:14:58
+-- Tiempo de generación: 17-11-2025 a las 15:58:37
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -227,6 +227,7 @@ INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_cad
 --
 -- Estructura de tabla para la tabla `marcas`
 --
+
 CREATE TABLE `marcas` (
   `id_marca` int(11) NOT NULL,
   `nombre` varchar(100) NOT NULL
@@ -329,6 +330,13 @@ CREATE TABLE `pedido_proveedor` (
   `total` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `pedido_proveedor`
+--
+
+INSERT INTO `pedido_proveedor` (`id_pedido`, `id_proveedor`, `fecha`, `id_estado_pedido`, `fecha_creacion`, `fecha_actualizacion`, `total`) VALUES
+(2, 1, '2025-11-14', 1, '2025-11-14 19:07:37', '2025-11-14 19:07:37', 100.00);
+
 -- --------------------------------------------------------
 
 --
@@ -343,6 +351,13 @@ CREATE TABLE `pedido_proveedor_detalle` (
   `costo_unitario` decimal(10,2) NOT NULL,
   `subtotal` decimal(10,2) GENERATED ALWAYS AS (`cantidad` * `costo_unitario`) STORED
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `pedido_proveedor_detalle`
+--
+
+INSERT INTO `pedido_proveedor_detalle` (`id_detalle`, `id_pedido`, `id_insumo`, `cantidad`, `costo_unitario`) VALUES
+(1, 2, 4, 1000, 0.10);
 
 -- --------------------------------------------------------
 
@@ -918,13 +933,13 @@ ALTER TABLE `pais`
 -- AUTO_INCREMENT de la tabla `pedido_proveedor`
 --
 ALTER TABLE `pedido_proveedor`
-  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `pedido_proveedor_detalle`
 --
 ALTER TABLE `pedido_proveedor_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `persona`

@@ -1,8 +1,5 @@
 // src/controllers/pedido_proveedor.controller.js - VERSIÓN COMPLETA ACTUALIZADA
 import db from "../config/db.js";
-
-// Obtener todos los pedidos a proveedor CON DETALLES
-// Optimización en pedido_proveedor.controller.js
 // src/controllers/pedido_proveedor.controller.js - VERSIÓN CORREGIDA
 export const getPedidosProveedor = async (req, res) => {
   try {
@@ -21,10 +18,7 @@ export const getPedidosProveedor = async (req, res) => {
       LEFT JOIN proveedor pr ON pp.id_proveedor = pr.id_proveedor
       LEFT JOIN estado_pedido_proveedor ep ON pp.id_estado_pedido = ep.id_estado_pedido
       ORDER BY pp.fecha DESC, pp.fecha_creacion DESC`);
-    console.log('📊 Pedidos obtenidos del backend:');
-    rows.forEach(pedido => {
-      console.log(`   Pedido ${pedido.id_pedido}: Estado ID = ${pedido.id_estado_pedido}, Estado = ${pedido.nombre_estado}`);
-    });
+
     // Obtener detalles para cada pedido
     const pedidosConDetalles = await Promise.all(
       rows.map(async (pedido) => {
@@ -35,7 +29,7 @@ export const getPedidosProveedor = async (req, res) => {
             ppd.cantidad,
             ppd.costo_unitario,
             ppd.subtotal,
-            i.nombre as insumo_nombre,
+            i.nombre,
             i.unidad_medida
           FROM pedido_proveedor_detalle ppd
           LEFT JOIN insumo i ON ppd.id_insumo = i.id_insumo
@@ -57,7 +51,17 @@ export const getPedidosProveedor = async (req, res) => {
             id_estado_pedido: pedido.id_estado_pedido,
             estado: pedido.nombre_estado
           },
-          detalles: detalles || [] // ✅ Asegurar array vacío si no hay detalles
+          detalles: detalles.map(det => ({
+            id_detalle: det.id_detalle,
+            id_insumo: det.id_insumo,
+            cantidad: det.cantidad,
+            costo_unitario: parseFloat(det.costo_unitario) || 0,
+            subtotal: parseFloat(det.subtotal) || 0,
+            insumo: {
+              nombre: det.nombre, // ✅ CORREGIDO: usar det.nombre directamente
+              unidad_medida: det.unidad_medida
+            }
+          })) || []
         };
       })
     );
@@ -90,7 +94,7 @@ export const getPedidoProveedorById = async (req, res) => {
     const [detallesRows] = await db.query(`
       SELECT 
         ppd.*,
-        i.nombre as insumo_nombre,
+        i.nombre,
         i.unidad_medida
       FROM pedido_proveedor_detalle ppd
       LEFT JOIN insumo i ON ppd.id_insumo = i.id_insumo
@@ -121,7 +125,7 @@ export const getPedidoProveedorById = async (req, res) => {
         costo_unitario: parseFloat(det.costo_unitario) || 0,
         subtotal: parseFloat(det.subtotal) || 0,
         insumo: {
-          nombre: det.insumo_nombre,
+          nombre: det.nombre, // ✅ CORREGIDO: usar det.nombre
           unidad_medida: det.unidad_medida
         }
       }))
@@ -223,15 +227,15 @@ export const createPedidoProveedor = async (req, res) => {
     );
 
     const [detallesRows] = await connection.query(`
-      SELECT 
-        ppd.*,
-        i.nombre as insumo_nombre,
-        i.unidad_medida
-      FROM pedido_proveedor_detalle ppd
-      LEFT JOIN insumo i ON ppd.id_insumo = i.id_insumo
-      WHERE ppd.id_pedido = ?`,
-      [id_pedido]
-    );
+  SELECT 
+    ppd.*,
+    i.nombre,
+    i.unidad_medida
+  FROM pedido_proveedor_detalle ppd
+  LEFT JOIN insumo i ON ppd.id_insumo = i.id_insumo
+  WHERE ppd.id_pedido = ?`,
+  [id_pedido]
+);
 
     const pedidoCompleto = {
       id_pedido: newPedido[0].id_pedido,
@@ -255,7 +259,7 @@ export const createPedidoProveedor = async (req, res) => {
         costo_unitario: parseFloat(det.costo_unitario) || 0,
         subtotal: parseFloat(det.subtotal) || 0,
         insumo: {
-          nombre: det.insumo_nombre,
+          nombre: det.nombre, // ✅ CORREGIDO
           unidad_medida: det.unidad_medida
         }
       }))
@@ -275,12 +279,13 @@ export const createPedidoProveedor = async (req, res) => {
 };
 
 // Actualizar estado del pedido
+// En src/controllers/pedido_proveedor.controller.js - ACTUALIZAR COMPLETAMENTE
 export const updatePedidoProveedor = async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
 
-    const { id_estado_pedido } = req.body;
+    const { id_estado_pedido, id_proveedor, fecha, detalles } = req.body;
     const id_pedido = req.params.id;
 
     // Verificar que el pedido existe
@@ -294,11 +299,77 @@ export const updatePedidoProveedor = async (req, res) => {
       return res.status(404).json({ message: "Pedido no encontrado" });
     }
 
-    // Actualizar el estado
-    await connection.query(
-      "UPDATE pedido_proveedor SET id_estado_pedido = ? WHERE id_pedido = ?",
-      [id_estado_pedido, id_pedido]
-    );
+    // ✅ ACTUALIZACIÓN COMPLETA DEL PEDIDO
+    if (id_proveedor !== undefined || fecha !== undefined || id_estado_pedido !== undefined) {
+      const updateFields = [];
+      const updateValues = [];
+
+      if (id_proveedor !== undefined) {
+        updateFields.push("id_proveedor = ?");
+        updateValues.push(id_proveedor);
+      }
+
+      if (fecha !== undefined) {
+        updateFields.push("fecha = ?");
+        updateValues.push(fecha);
+      }
+
+      if (id_estado_pedido !== undefined) {
+        updateFields.push("id_estado_pedido = ?");
+        updateValues.push(id_estado_pedido);
+      }
+
+      if (updateFields.length > 0) {
+        updateValues.push(id_pedido);
+        await connection.query(
+          `UPDATE pedido_proveedor SET ${updateFields.join(", ")} WHERE id_pedido = ?`,
+          updateValues
+        );
+      }
+    }
+
+    // ✅ ACTUALIZAR DETALLES SI SE ENVÍAN
+    if (detalles && Array.isArray(detalles)) {
+      // Eliminar detalles existentes
+      await connection.query(
+        "DELETE FROM pedido_proveedor_detalle WHERE id_pedido = ?",
+        [id_pedido]
+      );
+
+      let totalPedido = 0;
+
+      // Insertar nuevos detalles
+      for (const detalle of detalles) {
+        const { id_insumo, cantidad, costo_unitario } = detalle;
+
+        // Validar insumo
+        const [insumoRows] = await connection.query(
+          "SELECT id_insumo FROM insumo WHERE id_insumo = ? AND activo = 1",
+          [id_insumo]
+        );
+        
+        if (insumoRows.length === 0) {
+          await connection.rollback();
+          return res.status(404).json({ message: `Insumo con ID ${id_insumo} no encontrado` });
+        }
+
+        // Insertar detalle
+        await connection.query(
+          `INSERT INTO pedido_proveedor_detalle 
+           (id_pedido, id_insumo, cantidad, costo_unitario) 
+           VALUES (?, ?, ?, ?)`,
+          [id_pedido, id_insumo, cantidad, costo_unitario || 0]
+        );
+
+        totalPedido += cantidad * (costo_unitario || 0);
+      }
+
+      // Actualizar total del pedido
+      await connection.query(
+        "UPDATE pedido_proveedor SET total = ? WHERE id_pedido = ?",
+        [totalPedido, id_pedido]
+      );
+    }
 
     // Si el estado cambió a "Recibido" (4), actualizar stock de insumos
     if (id_estado_pedido === 4) {
@@ -316,15 +387,66 @@ export const updatePedidoProveedor = async (req, res) => {
           "UPDATE insumo SET stock_actual = stock_actual + ? WHERE id_insumo = ?",
           [detalle.cantidad, detalle.id_insumo]
         );
-
-        // Podrías registrar también un movimiento de stock si lo necesitas
       }
     }
 
     await connection.commit();
     
+    // Obtener el pedido actualizado completo
+    const [updatedPedido] = await connection.query(`
+      SELECT 
+        pp.*,
+        pr.razon_social as nombre_proveedor,
+        ep.estado as nombre_estado
+      FROM pedido_proveedor pp
+      LEFT JOIN proveedor pr ON pp.id_proveedor = pr.id_proveedor
+      LEFT JOIN estado_pedido_proveedor ep ON pp.id_estado_pedido = ep.id_estado_pedido
+      WHERE pp.id_pedido = ?`,
+      [id_pedido]
+    );
+
+ const [detallesRows] = await connection.query(`
+  SELECT 
+    ppd.*,
+    i.nombre,
+    i.unidad_medida
+  FROM pedido_proveedor_detalle ppd
+  LEFT JOIN insumo i ON ppd.id_insumo = i.id_insumo
+  WHERE ppd.id_pedido = ?`,
+  [id_pedido]
+);
+
+    const pedidoCompleto = {
+      id_pedido: updatedPedido[0].id_pedido,
+      id_proveedor: updatedPedido[0].id_proveedor,
+      fecha: updatedPedido[0].fecha,
+      id_estado_pedido: updatedPedido[0].id_estado_pedido,
+      total: parseFloat(updatedPedido[0].total) || 0,
+      fecha_creacion: updatedPedido[0].fecha_creacion,
+      fecha_actualizacion: updatedPedido[0].fecha_actualizacion,
+      proveedor: {
+        razon_social: updatedPedido[0].nombre_proveedor
+      },
+      estado: {
+        id_estado_pedido: updatedPedido[0].id_estado_pedido,
+        estado: updatedPedido[0].nombre_estado
+      },
+      detalles: detallesRows.map(det => ({
+        id_detalle: det.id_detalle,
+        id_insumo: det.id_insumo,
+        cantidad: det.cantidad,
+        costo_unitario: parseFloat(det.costo_unitario) || 0,
+        subtotal: parseFloat(det.subtotal) || 0,
+        insumo: {
+          nombre: det.nombre,
+          unidad_medida: det.unidad_medida
+        }
+      }))
+    };
+
     res.json({ 
-      message: "Pedido a proveedor actualizado correctamente" 
+      message: "Pedido a proveedor actualizado correctamente",
+      pedido: pedidoCompleto
     });
   } catch (error) {
     await connection.rollback();

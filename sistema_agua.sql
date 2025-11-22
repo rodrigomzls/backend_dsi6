@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-11-2025 a las 15:58:37
+-- Tiempo de generación: 19-11-2025 a las 15:49:13
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -215,7 +215,7 @@ CREATE TABLE `lote_producto` (
 --
 
 INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_caducidad`, `cantidad_inicial`, `cantidad_actual`, `fecha_creacion`, `activo`) VALUES
-(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 99, '2025-10-18 20:18:44', 1),
+(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 98, '2025-10-18 20:18:44', 1),
 (2, 2, 'LOTE-002-2025', '2026-03-30', 80, 80, '2025-10-18 20:18:44', 1),
 (3, 3, 'LOTE-003-2025', '2026-03-30', 200, 196, '2025-10-18 20:18:44', 1),
 (4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1),
@@ -292,7 +292,8 @@ INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento
 (10, 1, 'ingreso', 100, '2025-11-12 14:04:38', 'Ingreso de nuevo lote de 100 bidones  de agua bella', 9, 5),
 (12, 2, 'ingreso', 50, '2025-11-12 17:46:20', '', 9, 6),
 (13, 1, 'egreso', 1, '2025-11-12 20:58:45', 'Venta #28 - Lote LOTE-001-2025', 3, 1),
-(14, 3, 'egreso', 4, '2025-11-13 14:26:03', 'Venta #29 - Lote LOTE-003-2025', 3, 3);
+(14, 3, 'egreso', 4, '2025-11-13 14:26:03', 'Venta #29 - Lote LOTE-003-2025', 3, 3),
+(15, 1, 'egreso', 1, '2025-11-17 20:57:25', 'Venta #30 - Lote LOTE-001-2025', 3, 1);
 
 -- --------------------------------------------------------
 
@@ -335,7 +336,9 @@ CREATE TABLE `pedido_proveedor` (
 --
 
 INSERT INTO `pedido_proveedor` (`id_pedido`, `id_proveedor`, `fecha`, `id_estado_pedido`, `fecha_creacion`, `fecha_actualizacion`, `total`) VALUES
-(2, 1, '2025-11-14', 1, '2025-11-14 19:07:37', '2025-11-14 19:07:37', 100.00);
+(2, 1, '2025-11-14', 2, '2025-11-14 19:07:37', '2025-11-17 19:06:40', 100.00),
+(3, 2, '2025-11-17', 2, '2025-11-17 18:33:53', '2025-11-19 02:45:11', 50.00),
+(4, 3, '2025-11-18', 1, '2025-11-19 02:50:13', '2025-11-19 02:50:13', 50.00);
 
 -- --------------------------------------------------------
 
@@ -357,7 +360,10 @@ CREATE TABLE `pedido_proveedor_detalle` (
 --
 
 INSERT INTO `pedido_proveedor_detalle` (`id_detalle`, `id_pedido`, `id_insumo`, `cantidad`, `costo_unitario`) VALUES
-(1, 2, 4, 1000, 0.10);
+(1, 2, 4, 1000, 0.10),
+(2, 3, 7, 100, 0.50),
+(3, 4, 4, 100, 0.20),
+(4, 4, 6, 100, 0.30);
 
 -- --------------------------------------------------------
 
@@ -433,7 +439,7 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 240, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 239, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
 (2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 237, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
 (3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 772, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
 (4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
@@ -550,10 +556,10 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_rol`, `id_persona`, `activo`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(3, 'admin', 'admin@sistemaagua.com', '$2b$10$4ps7qPzf6gS6cMdaPIMfR.JOMqJyOk3YpkBH47kCybXteyapvW8Vi', 1, 6, 1, '2025-10-21 01:38:47', '2025-10-21 01:38:47'),
+(3, 'admin', 'admin@sistemaagua.com', '$2b$10$/0flwtx54/nkPXRbYEiOA.0uijO7K/bIq/osaG8HScJkFbek/UNf.', 1, 6, 1, '2025-10-21 01:38:47', '2025-11-19 13:44:04'),
 (5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
-(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$4HLAxeY5avAfgx69YmDbU./0H6ET5B6Ru9wQde5c9dP1289Ab.LxW', 2, 13, 1, '2025-10-28 03:36:35', '2025-10-28 17:33:57'),
-(8, 'Juan', 'juan@gmail.com', '$2b$10$HGmkX1h9KB3TRMpAKzROY.jL3UBiBv54mTciKqpYnmXsMgJUvYGtO', 3, 1, 1, '2025-10-31 21:23:33', '2025-10-31 21:23:33'),
+(6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$8veD/rOo2O8OUiAV2ZzcA.qRWXS2SehRvgTARvH5gs8h4.ASVN8Jy', 2, 13, 1, '2025-10-28 03:36:35', '2025-11-19 13:45:45'),
+(8, 'Juan', 'juan@gmail.com', '$2b$10$32yxolacpgqblM0RaiSF9OYyyz3L7SjhFjZ19gt1Xw5FRZlwxiLlC', 3, 1, 1, '2025-10-31 21:23:33', '2025-11-19 13:45:02'),
 (9, 'Leydi', 'Leydi@gmail.com', '$2b$10$ty.pXvrTDQzQZ5ZzWAiHoe3Pfb4yKR5lW.qcxbpQdSE.YF3CAhmUa', 4, 16, 1, '2025-11-06 14:57:55', '2025-11-10 18:21:09');
 
 -- --------------------------------------------------------
@@ -596,7 +602,8 @@ INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_met
 (13, 3, '2025-11-09', '17:17:07', 18.00, 1, 5, 1, 5, '', '2025-11-09 22:17:07', '2025-11-12 20:20:30'),
 (14, 11, '2025-11-10', '11:25:35', 51.00, 1, 7, 1, 3, '', '2025-11-10 16:25:35', '2025-11-12 17:23:52'),
 (28, 1, '2025-11-12', '15:58:44', 4.00, 1, 5, 1, 3, NULL, '2025-11-12 20:58:44', '2025-11-12 20:59:53'),
-(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 1, NULL, 3, NULL, '2025-11-13 14:26:03', '2025-11-13 14:26:03');
+(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 1, NULL, 3, NULL, '2025-11-13 14:26:03', '2025-11-13 14:26:03'),
+(30, 11, '2025-11-17', '15:57:25', 4.00, 1, 5, 1, 3, NULL, '2025-11-17 20:57:25', '2025-11-19 03:00:57');
 
 -- --------------------------------------------------------
 
@@ -634,7 +641,8 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (14, 14, 3, 6, 6.00),
 (15, 14, 4, 2, 7.50),
 (16, 28, 1, 1, 4.00),
-(17, 29, 3, 4, 6.00);
+(17, 29, 3, 4, 6.00),
+(18, 30, 1, 1, 4.00);
 
 -- --------------------------------------------------------
 
@@ -655,7 +663,8 @@ CREATE TABLE `venta_detalle_lote` (
 
 INSERT INTO `venta_detalle_lote` (`id_venta_detalle_lote`, `id_detalle_venta`, `id_lote`, `cantidad`) VALUES
 (1, 16, 1, 1),
-(2, 17, 3, 4);
+(2, 17, 3, 4),
+(3, 18, 1, 1);
 
 --
 -- Índices para tablas volcadas
@@ -921,7 +930,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`
@@ -933,13 +942,13 @@ ALTER TABLE `pais`
 -- AUTO_INCREMENT de la tabla `pedido_proveedor`
 --
 ALTER TABLE `pedido_proveedor`
-  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `pedido_proveedor_detalle`
 --
 ALTER TABLE `pedido_proveedor_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `persona`
@@ -987,19 +996,19 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle_lote`
 --
 ALTER TABLE `venta_detalle_lote`
-  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Restricciones para tablas volcadas

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-11-2025 a las 15:49:13
+-- Tiempo de generación: 22-11-2025 a las 07:14:39
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -72,7 +72,9 @@ INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social
 (9, 23, 'Persona', NULL, 1, '2025-11-10 15:37:16'),
 (10, 24, 'Persona', NULL, 1, '2025-11-10 16:18:00'),
 (11, 25, 'Persona', NULL, 1, '2025-11-10 16:22:07'),
-(12, 27, 'Persona', NULL, 1, '2025-11-12 18:16:13');
+(12, 27, 'Persona', NULL, 1, '2025-11-12 18:16:13'),
+(13, 28, 'Bodega', 'Huancas', 1, '2025-11-19 17:51:55'),
+(14, 29, 'Persona', NULL, 1, '2025-11-19 18:13:02');
 
 -- --------------------------------------------------------
 
@@ -188,10 +190,10 @@ INSERT INTO `insumo` (`id_insumo`, `nombre`, `descripcion`, `unidad_medida`, `co
 (1, 'Bidón plástico vacío 20L', 'Bidón de plástico vacío para envasar agua', 'unidades', 1.80, 0, 100, 1, 1, '2025-11-13 17:05:58'),
 (2, 'Botella PET 650ml', 'Botella PET vacía para agua 650ml', 'unidades', 0.25, 0, 500, 1, 1, '2025-11-13 17:05:58'),
 (3, 'Botella PET 600ml', 'Botella PET vacía para agua 600ml', 'unidades', 0.22, 0, 400, 1, 1, '2025-11-13 17:05:58'),
-(4, 'Tapa rosca plástica', 'Tapa de plástico para bidones y botellas', 'unidades', 0.08, 0, 1000, 1, 1, '2025-11-13 17:05:58'),
+(4, 'Tapa rosca plástica', 'Tapa de plástico para bidones y botellas', 'unidades', 0.08, 50, 1000, 1, 1, '2025-11-13 17:05:58'),
 (5, 'Etiqueta frontal Agua Bella', 'Etiqueta frontal para productos marca Bella', 'unidades', 0.03, 0, 2000, 1, 1, '2025-11-13 17:05:58'),
-(6, 'Etiqueta frontal Agua Viña', 'Etiqueta frontal para productos marca Viña', 'unidades', 0.03, 0, 1500, 1, 1, '2025-11-13 17:05:58'),
-(7, 'Sello de seguridad', 'Sello de seguridad para bidones', 'unidades', 0.15, 0, 300, 1, 1, '2025-11-13 17:05:58');
+(6, 'Etiqueta frontal Agua Viña', 'Etiqueta frontal para productos marca Viña', 'unidades', 0.03, 1000, 1500, 1, 1, '2025-11-13 17:05:58'),
+(7, 'Sello de seguridad', 'Sello de seguridad para bidones', 'unidades', 0.15, 150, 300, 1, 1, '2025-11-13 17:05:58');
 
 -- --------------------------------------------------------
 
@@ -215,12 +217,13 @@ CREATE TABLE `lote_producto` (
 --
 
 INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_caducidad`, `cantidad_inicial`, `cantidad_actual`, `fecha_creacion`, `activo`) VALUES
-(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 98, '2025-10-18 20:18:44', 1),
+(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 97, '2025-10-18 20:18:44', 1),
 (2, 2, 'LOTE-002-2025', '2026-03-30', 80, 80, '2025-10-18 20:18:44', 1),
-(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 196, '2025-10-18 20:18:44', 1),
+(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 185, '2025-10-18 20:18:44', 1),
 (4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1),
 (5, 1, 'L-2025Z', '2026-05-11', 100, 200, '2025-11-12 05:34:20', 1),
-(6, 2, 'L-202510', '2026-06-12', 50, 100, '2025-11-12 17:44:59', 1);
+(6, 2, 'L-202510', '2026-06-12', 50, 100, '2025-11-12 17:44:59', 1),
+(7, 3, '256-l', '2026-06-19', 500, 1000, '2025-11-19 18:57:49', 1);
 
 -- --------------------------------------------------------
 
@@ -293,7 +296,11 @@ INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento
 (12, 2, 'ingreso', 50, '2025-11-12 17:46:20', '', 9, 6),
 (13, 1, 'egreso', 1, '2025-11-12 20:58:45', 'Venta #28 - Lote LOTE-001-2025', 3, 1),
 (14, 3, 'egreso', 4, '2025-11-13 14:26:03', 'Venta #29 - Lote LOTE-003-2025', 3, 3),
-(15, 1, 'egreso', 1, '2025-11-17 20:57:25', 'Venta #30 - Lote LOTE-001-2025', 3, 1);
+(15, 1, 'egreso', 1, '2025-11-17 20:57:25', 'Venta #30 - Lote LOTE-001-2025', 3, 1),
+(16, 3, 'egreso', 10, '2025-11-19 17:53:16', 'Venta #31 - Lote LOTE-003-2025', 3, 3),
+(17, 1, 'egreso', 1, '2025-11-19 18:13:42', 'Venta #32 - Lote LOTE-001-2025', 3, 1),
+(18, 3, 'egreso', 1, '2025-11-19 18:17:41', 'Venta #33 - Lote LOTE-003-2025', 3, 3),
+(20, 3, 'ingreso', 500, '2025-11-19 19:00:51', 'Ingreso paquetes de agua bella', 9, 7);
 
 -- --------------------------------------------------------
 
@@ -336,9 +343,13 @@ CREATE TABLE `pedido_proveedor` (
 --
 
 INSERT INTO `pedido_proveedor` (`id_pedido`, `id_proveedor`, `fecha`, `id_estado_pedido`, `fecha_creacion`, `fecha_actualizacion`, `total`) VALUES
-(2, 1, '2025-11-14', 2, '2025-11-14 19:07:37', '2025-11-17 19:06:40', 100.00),
-(3, 2, '2025-11-17', 2, '2025-11-17 18:33:53', '2025-11-19 02:45:11', 50.00),
-(4, 3, '2025-11-18', 1, '2025-11-19 02:50:13', '2025-11-19 02:50:13', 50.00);
+(2, 1, '2025-11-14', 5, '2025-11-14 19:07:37', '2025-11-19 16:22:27', 100.00),
+(3, 2, '2025-11-17', 4, '2025-11-17 18:33:53', '2025-11-19 15:46:37', 50.00),
+(5, 3, '2025-11-19', 5, '2025-11-19 15:11:53', '2025-11-19 15:15:57', 10.00),
+(7, 1, '2025-11-19', 5, '2025-11-19 16:23:11', '2025-11-19 18:03:46', 300.00),
+(8, 2, '2025-11-19', 4, '2025-11-19 16:24:39', '2025-11-19 18:03:04', 100.00),
+(9, 4, '2025-11-19', 4, '2025-11-19 18:44:36', '2025-11-19 18:45:30', 20.00),
+(10, 1, '2025-11-20', 1, '2025-11-20 15:29:44', '2025-11-20 15:29:44', 30.00);
 
 -- --------------------------------------------------------
 
@@ -362,8 +373,13 @@ CREATE TABLE `pedido_proveedor_detalle` (
 INSERT INTO `pedido_proveedor_detalle` (`id_detalle`, `id_pedido`, `id_insumo`, `cantidad`, `costo_unitario`) VALUES
 (1, 2, 4, 1000, 0.10),
 (2, 3, 7, 100, 0.50),
-(3, 4, 4, 100, 0.20),
-(4, 4, 6, 100, 0.30);
+(5, 5, 3, 100, 0.10),
+(12, 8, 6, 1000, 0.10),
+(16, 7, 4, 1500, 0.20),
+(17, 9, 4, 50, 0.20),
+(18, 9, 7, 50, 0.20),
+(19, 10, 5, 100, 0.10),
+(20, 10, 6, 100, 0.20);
 
 -- --------------------------------------------------------
 
@@ -409,7 +425,10 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (24, 'NO_ESPECIFICADO', 'TEMP-1762791480853-y', 'Julio Carlos Santillama', '945232411', 'jr.las flores mz.12 lt.5', NULL, 1, '2025-11-10 16:18:00'),
 (25, 'NO_ESPECIFICADO', 'TEMP-1762791727082-y', 'Cristiano Ronaldo dos Santos Aveiro', '927810192', 'Av. Centenario 524, Pucallpa 25000', NULL, 1, '2025-11-10 16:22:07'),
 (26, 'DNI', '72022898', 'Raul Murrieta ', '928393833', 'jr.urubamba ', NULL, 1, '2025-11-12 17:28:01'),
-(27, 'NO_ESPECIFICADO', 'TEMP-1762971373153-0', 'raul portugal padilla', '930613571', 'Urbanizacion Imosa mz.A lt.9', NULL, 1, '2025-11-12 18:16:13');
+(27, 'NO_ESPECIFICADO', 'TEMP-1762971373153-0', 'raul portugal padilla', '930613571', 'Urbanizacion Imosa mz.A lt.9', NULL, 1, '2025-11-12 18:16:13'),
+(28, 'NO_ESPECIFICADO', 'TEMP-1763574715329-i', 'Luciana Canesa', '982938828', 'AV. Los cedros mz.b lt.5', NULL, 1, '2025-11-19 17:51:55'),
+(29, 'DNI', '42288795', 'raul portugal padilla', '930613571', 'urb. imosa mz.A lt.9', NULL, 1, '2025-11-19 18:13:02'),
+(30, 'RUC', '203992828922', 'Agua Manantial S.A.C', '989392892', 'jr.macisea', NULL, 1, '2025-11-19 18:42:45');
 
 -- --------------------------------------------------------
 
@@ -439,9 +458,9 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 239, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 238, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
 (2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 237, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 772, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 1261, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
 (4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
@@ -465,7 +484,8 @@ CREATE TABLE `proveedor` (
 INSERT INTO `proveedor` (`id_proveedor`, `id_persona`, `razon_social`, `activo`, `fecha_registro`) VALUES
 (1, 4, 'Proveedor Agua Pura SAC', 1, '2025-10-18 20:18:44'),
 (2, 5, 'Insumos Beverage Perú', 1, '2025-10-18 20:18:44'),
-(3, 26, 'Agua y Vida sac', 1, '2025-11-12 17:28:01');
+(3, 26, 'Agua y Vida sac', 1, '2025-11-12 17:28:01'),
+(4, 30, 'Manantial ', 1, '2025-11-19 18:42:45');
 
 -- --------------------------------------------------------
 
@@ -580,30 +600,37 @@ CREATE TABLE `venta` (
   `id_vendedor` int(11) DEFAULT NULL,
   `notas` text DEFAULT NULL,
   `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
-  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `fecha_inicio_ruta` datetime DEFAULT NULL,
+  `fecha_fin_ruta` datetime DEFAULT NULL,
+  `ubicacion_inicio_ruta` varchar(100) DEFAULT NULL,
+  `tracking_activo` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `venta`
 --
 
-INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-11-03 19:59:31'),
-(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25'),
-(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 7, 1, 3, '', '2025-10-22 03:52:17', '2025-11-08 21:19:37'),
-(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41'),
-(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 7, 1, 5, '', '2025-11-01 21:41:52', '2025-11-08 21:19:45'),
-(7, 6, '2025-11-01', '16:46:29', 4.00, 1, 5, 3, 5, '', '2025-11-01 21:46:29', '2025-11-01 21:51:47'),
-(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12'),
-(9, 3, '2025-11-09', '16:13:58', 13.50, 1, 8, 1, 3, '', '2025-11-09 21:13:58', '2025-11-09 21:17:36'),
-(10, 3, '2025-11-09', '16:22:15', 22.00, 1, 5, 1, 5, '', '2025-11-09 21:22:15', '2025-11-09 21:33:25'),
-(11, 3, '2025-11-09', '16:39:24', 8.00, 1, 8, 1, 5, ' CANCELACIÓN REPARTIDOR: no se encuentra en domicilio', '2025-11-09 21:39:24', '2025-11-09 21:45:45'),
-(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 5, 1, 5, '', '2025-11-09 22:14:48', '2025-11-12 20:20:51'),
-(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 5, 1, 5, '', '2025-11-09 22:17:07', '2025-11-12 20:20:30'),
-(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 7, 1, 3, '', '2025-11-10 16:25:35', '2025-11-12 17:23:52'),
-(28, 1, '2025-11-12', '15:58:44', 4.00, 1, 5, 1, 3, NULL, '2025-11-12 20:58:44', '2025-11-12 20:59:53'),
-(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 1, NULL, 3, NULL, '2025-11-13 14:26:03', '2025-11-13 14:26:03'),
-(30, 11, '2025-11-17', '15:57:25', 4.00, 1, 5, 1, 3, NULL, '2025-11-17 20:57:25', '2025-11-19 03:00:57');
+INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`, `fecha_inicio_ruta`, `fecha_fin_ruta`, `ubicacion_inicio_ruta`, `tracking_activo`) VALUES
+(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-11-03 19:59:31', NULL, NULL, NULL, 0),
+(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25', NULL, NULL, NULL, 0),
+(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 7, 1, 3, '', '2025-10-22 03:52:17', '2025-11-08 21:19:37', NULL, NULL, NULL, 0),
+(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41', NULL, NULL, NULL, 0),
+(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 7, 1, 5, '', '2025-11-01 21:41:52', '2025-11-08 21:19:45', NULL, NULL, NULL, 0),
+(7, 6, '2025-11-01', '16:46:29', 4.00, 1, 5, 3, 5, '', '2025-11-01 21:46:29', '2025-11-01 21:51:47', NULL, NULL, NULL, 0),
+(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12', NULL, NULL, NULL, 0),
+(9, 3, '2025-11-09', '16:13:58', 13.50, 1, 8, 1, 3, '', '2025-11-09 21:13:58', '2025-11-09 21:17:36', NULL, NULL, NULL, 0),
+(10, 3, '2025-11-09', '16:22:15', 22.00, 1, 7, 1, 5, '', '2025-11-09 21:22:15', '2025-11-22 05:38:39', '2025-11-22 00:35:43', NULL, '-8.404992,-74.5439232', 1),
+(11, 3, '2025-11-09', '16:39:24', 8.00, 1, 8, 1, 5, ' CANCELACIÓN REPARTIDOR: no se encuentra en domicilio', '2025-11-09 21:39:24', '2025-11-09 21:45:45', NULL, NULL, NULL, 0),
+(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 7, 1, 5, '', '2025-11-09 22:14:48', '2025-11-22 06:12:40', '2025-11-22 00:51:43', '2025-11-22 01:12:40', '-8.404992,-74.5439232', 0),
+(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 5, 1, 5, '', '2025-11-09 22:17:07', '2025-11-12 20:20:30', NULL, NULL, NULL, 0),
+(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 7, 1, 3, '', '2025-11-10 16:25:35', '2025-11-12 17:23:52', NULL, NULL, NULL, 0),
+(28, 1, '2025-11-12', '15:58:44', 4.00, 1, 5, 1, 3, NULL, '2025-11-12 20:58:44', '2025-11-12 20:59:53', NULL, NULL, NULL, 0),
+(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 4, NULL, 3, NULL, '2025-11-13 14:26:03', '2025-11-22 05:03:49', NULL, NULL, NULL, 0),
+(30, 11, '2025-11-17', '15:57:25', 4.00, 1, 5, 1, 3, NULL, '2025-11-17 20:57:25', '2025-11-19 03:00:57', NULL, NULL, NULL, 0),
+(31, 13, '2025-11-19', '12:53:16', 60.00, 1, 7, 1, 3, NULL, '2025-11-19 17:53:16', '2025-11-19 17:56:43', NULL, NULL, NULL, 0),
+(32, 14, '2025-11-19', '13:13:41', 4.00, 1, 7, 1, 3, NULL, '2025-11-19 18:13:41', '2025-11-19 18:30:46', NULL, NULL, NULL, 0),
+(33, 1, '2025-11-19', '13:17:41', 6.00, 1, 5, 1, 3, NULL, '2025-11-19 18:17:41', '2025-11-19 18:18:08', NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -642,7 +669,10 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (15, 14, 4, 2, 7.50),
 (16, 28, 1, 1, 4.00),
 (17, 29, 3, 4, 6.00),
-(18, 30, 1, 1, 4.00);
+(18, 30, 1, 1, 4.00),
+(19, 31, 3, 10, 6.00),
+(20, 32, 1, 1, 4.00),
+(21, 33, 3, 1, 6.00);
 
 -- --------------------------------------------------------
 
@@ -664,7 +694,10 @@ CREATE TABLE `venta_detalle_lote` (
 INSERT INTO `venta_detalle_lote` (`id_venta_detalle_lote`, `id_detalle_venta`, `id_lote`, `cantidad`) VALUES
 (1, 16, 1, 1),
 (2, 17, 3, 4),
-(3, 18, 1, 1);
+(3, 18, 1, 1),
+(4, 19, 3, 10),
+(5, 20, 1, 1),
+(6, 21, 3, 1);
 
 --
 -- Índices para tablas volcadas
@@ -876,7 +909,7 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -912,7 +945,7 @@ ALTER TABLE `insumo`
 -- AUTO_INCREMENT de la tabla `lote_producto`
 --
 ALTER TABLE `lote_producto`
-  MODIFY `id_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `marcas`
@@ -930,7 +963,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`
@@ -942,19 +975,19 @@ ALTER TABLE `pais`
 -- AUTO_INCREMENT de la tabla `pedido_proveedor`
 --
 ALTER TABLE `pedido_proveedor`
-  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `pedido_proveedor_detalle`
 --
 ALTER TABLE `pedido_proveedor_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -966,7 +999,7 @@ ALTER TABLE `producto`
 -- AUTO_INCREMENT de la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
-  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `provincia`
@@ -996,19 +1029,19 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle_lote`
 --
 ALTER TABLE `venta_detalle_lote`
-  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas

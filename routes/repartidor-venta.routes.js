@@ -6,7 +6,8 @@ import {
     getHistorialEntregas,
     getVentaDetalleAsignada,
     updateEstadoVentaRepartidor, // Nueva función
-    cancelarEntregaRepartidor    // Nueva función
+    cancelarEntregaRepartidor,
+    iniciarRutaEntrega    // Nueva función
 } from '../controllers/repartidor-venta.controller.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 
@@ -24,5 +25,5 @@ router.get('/repartidor/detalle/:id', requireRole([3], 'rutas_asignadas'), getVe
 // NUEVAS RUTAS PARA ACTUALIZAR ESTADO
 router.patch('/repartidor/:id/pagado', requireRole([3], 'entregas_pendientes'), updateEstadoVentaRepartidor);
 router.patch('/repartidor/:id/cancelado', requireRole([3], 'entregas_pendientes'), cancelarEntregaRepartidor);
-
+router.patch('/repartidor/:id/iniciar-ruta', requireRole([3], 'rutas_asignadas'), iniciarRutaEntrega);
 export default router;

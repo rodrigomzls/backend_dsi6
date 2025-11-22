@@ -2,9 +2,9 @@
 import db from '../config/db.js';
 
 // Obtener ventas asignadas al repartidor actual
-export const getVentasAsignadas = async (req, res) => {
+// Controlador para iniciar ruta física
+export const iniciarRutaEntrega = async (req, res) => {
     try {
-        // Obtener el id_repartidor del usuario actual
         const [repartidores] = await db.execute(`
             SELECT r.id_repartidor 
             FROM repartidor r
@@ -17,7 +17,74 @@ export const getVentasAsignadas = async (req, res) => {
         }
 
         const repartidorId = repartidores[0].id_repartidor;
-        console.log(`🔍 Buscando ventas para repartidor ID: ${repartidorId}`);
+        const { id } = req.params;
+        const { coordenadas } = req.body;
+
+        console.log(`🔄 Repartidor ${repartidorId} iniciando ruta física para venta ${id}`);
+
+        // Verificar que la venta está asignada y en estado "En ruta"
+        const [ventas] = await db.execute(`
+            SELECT id_venta, fecha_inicio_ruta, tracking_activo
+            FROM venta 
+            WHERE id_venta = ? AND id_repartidor = ? AND id_estado_venta = 5
+        `, [id, repartidorId]);
+
+        if (ventas.length === 0) {
+            return res.status(404).json({ 
+                error: 'Venta no encontrada o no está en estado "En ruta"' 
+            });
+        }
+
+        // Si ya se inició la ruta antes
+        if (ventas[0].fecha_inicio_ruta) {
+            return res.status(400).json({ 
+                error: 'La ruta ya fue iniciada anteriormente',
+                fecha_inicio_ruta: ventas[0].fecha_inicio_ruta
+            });
+        }
+
+        // Registrar inicio de ruta física
+        const [result] = await db.execute(`
+            UPDATE venta 
+            SET fecha_inicio_ruta = NOW(), 
+                ubicacion_inicio_ruta = ?,
+                tracking_activo = TRUE,
+                fecha_actualizacion = NOW()
+            WHERE id_venta = ? AND id_repartidor = ?
+        `, [coordenadas, id, repartidorId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ error: 'No se pudo iniciar la ruta' });
+        }
+
+        console.log(`✅ Ruta física iniciada para venta ${id} por repartidor ${repartidorId}`);
+        res.json({ 
+            success: true,
+            message: 'Ruta iniciada correctamente',
+            fecha_inicio_ruta: new Date(),
+            tracking_activo: true
+        });
+    } catch (error) {
+        console.error('Error iniciando ruta:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Controlador para obtener ventas con información de ruta
+export const getVentasAsignadas = async (req, res) => {
+    try {
+        const [repartidores] = await db.execute(`
+            SELECT r.id_repartidor 
+            FROM repartidor r
+            JOIN usuario u ON r.id_persona = u.id_persona
+            WHERE u.id_usuario = ?
+        `, [req.user.id_usuario]);
+
+        if (repartidores.length === 0) {
+            return res.status(404).json({ error: 'Repartidor no encontrado para este usuario' });
+        }
+
+        const repartidorId = repartidores[0].id_repartidor;
         
         const [ventas] = await db.execute(`
             SELECT 
@@ -35,7 +102,11 @@ export const getVentasAsignadas = async (req, res) => {
                 c.razon_social,
                 mp.metodo_pago,
                 v.notas,
-                v.fecha_creacion
+                v.fecha_creacion,
+                v.fecha_inicio_ruta,
+                v.fecha_fin_ruta,
+                v.ubicacion_inicio_ruta,
+                v.tracking_activo
             FROM venta v
             LEFT JOIN cliente c ON v.id_cliente = c.id_cliente
             LEFT JOIN persona p_cliente ON c.id_persona = p_cliente.id_persona
@@ -43,7 +114,12 @@ export const getVentasAsignadas = async (req, res) => {
             LEFT JOIN metodo_pago mp ON v.id_metodo_pago = mp.id_metodo_pago
             WHERE v.id_repartidor = ? 
             AND v.id_estado_venta IN (4, 5) -- Listo para repartos, En ruta
-            ORDER BY v.fecha_creacion DESC
+            ORDER BY 
+                CASE 
+                    WHEN v.fecha_inicio_ruta IS NULL THEN 1 -- Primero las no iniciadas
+                    ELSE 2 -- Luego las iniciadas
+                END,
+                v.fecha_creacion DESC
         `, [repartidorId]);
         
         console.log(`✅ Ventas asignadas encontradas: ${ventas.length}`);
@@ -53,7 +129,6 @@ export const getVentasAsignadas = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
 // Obtener entregas pendientes (estado "En ruta")
 export const getEntregasPendientes = async (req, res) => {
     try {
@@ -239,6 +314,7 @@ export const getVentaDetalleAsignada = async (req, res) => {
 // src/controllers/repartidor-venta.controller.js
 
 // Marcar entrega como pagada (solo para repartidor)
+// En repartidor-venta.controller.js - ACTUALIZAR updateEstadoVentaRepartidor
 export const updateEstadoVentaRepartidor = async (req, res) => {
     try {
         // Obtener el id_repartidor del usuario actual
@@ -260,7 +336,7 @@ export const updateEstadoVentaRepartidor = async (req, res) => {
 
         // Verificar que la venta está asignada a este repartidor y en estado "En ruta"
         const [ventas] = await db.execute(`
-            SELECT id_venta, id_estado_venta 
+            SELECT id_venta, id_estado_venta, fecha_inicio_ruta
             FROM venta 
             WHERE id_venta = ? AND id_repartidor = ? AND id_estado_venta = 5
         `, [id, repartidorId]);
@@ -271,10 +347,16 @@ export const updateEstadoVentaRepartidor = async (req, res) => {
             });
         }
 
-        // Actualizar estado a "Pagado" (7)
+        // ✅ NUEVO: Registrar fecha de fin de ruta si la ruta fue iniciada
+        const fechaFinRuta = ventas[0].fecha_inicio_ruta ? 'NOW()' : 'NULL';
+        
+        // Actualizar estado a "Pagado" (7) y registrar fin de ruta
         const [result] = await db.execute(`
             UPDATE venta 
-            SET id_estado_venta = 7, fecha_actualizacion = NOW()
+            SET id_estado_venta = 7, 
+                fecha_fin_ruta = ${fechaFinRuta},
+                tracking_activo = FALSE,
+                fecha_actualizacion = NOW()
             WHERE id_venta = ? AND id_repartidor = ?
         `, [id, repartidorId]);
 
@@ -286,7 +368,8 @@ export const updateEstadoVentaRepartidor = async (req, res) => {
         res.json({ 
             message: 'Venta marcada como pagada correctamente',
             id_estado_venta: 7,
-            estado: 'Pagado'
+            estado: 'Pagado',
+            fecha_fin_ruta: fechaFinRuta !== 'NULL' ? new Date() : null
         });
     } catch (error) {
         console.error('Error actualizando estado de venta:', error);
@@ -295,6 +378,7 @@ export const updateEstadoVentaRepartidor = async (req, res) => {
 };
 
 // Marcar entrega como cancelada (solo para repartidor)
+// En repartidor-venta.controller.js - ACTUALIZAR cancelarEntregaRepartidor
 export const cancelarEntregaRepartidor = async (req, res) => {
     try {
         // Obtener el id_repartidor del usuario actual
@@ -321,7 +405,7 @@ export const cancelarEntregaRepartidor = async (req, res) => {
 
         // Verificar que la venta está asignada a este repartidor y en estado "En ruta"
         const [ventas] = await db.execute(`
-            SELECT id_venta, id_estado_venta 
+            SELECT id_venta, id_estado_venta, fecha_inicio_ruta
             FROM venta 
             WHERE id_venta = ? AND id_repartidor = ? AND id_estado_venta = 5
         `, [id, repartidorId]);
@@ -332,10 +416,16 @@ export const cancelarEntregaRepartidor = async (req, res) => {
             });
         }
 
-        // Actualizar estado a "Cancelado" (8) y agregar motivo
+        // ✅ NUEVO: Registrar fecha de fin de ruta si la ruta fue iniciada
+        const fechaFinRuta = ventas[0].fecha_inicio_ruta ? 'NOW()' : 'NULL';
+
+        // Actualizar estado a "Cancelado" (8), agregar motivo y registrar fin de ruta
         const [result] = await db.execute(`
             UPDATE venta 
-            SET id_estado_venta = 8, notas = CONCAT(COALESCE(notas, ''), ' CANCELACIÓN REPARTIDOR: ', ?), 
+            SET id_estado_venta = 8, 
+                notas = CONCAT(COALESCE(notas, ''), ' CANCELACIÓN REPARTIDOR: ', ?), 
+                fecha_fin_ruta = ${fechaFinRuta},
+                tracking_activo = FALSE,
                 fecha_actualizacion = NOW()
             WHERE id_venta = ? AND id_repartidor = ?
         `, [motivo, id, repartidorId]);
@@ -348,7 +438,8 @@ export const cancelarEntregaRepartidor = async (req, res) => {
         res.json({ 
             message: 'Venta cancelada correctamente',
             id_estado_venta: 8,
-            estado: 'Cancelado'
+            estado: 'Cancelado',
+            fecha_fin_ruta: fechaFinRuta !== 'NULL' ? new Date() : null
         });
     } catch (error) {
         console.error('Error cancelando venta:', error);

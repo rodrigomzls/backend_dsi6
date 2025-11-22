@@ -428,6 +428,7 @@ export const asignarRepartidor = async (req, res) => {
 
 // Cambiar estado de venta (versión mejorada)
 // En venta.controller.js - en updateEstadoVenta
+// En venta.controller.js - ACTUALIZAR updateEstadoVenta
 export const updateEstadoVenta = async (req, res) => {
     try {
         const { id } = req.params;
@@ -435,7 +436,21 @@ export const updateEstadoVenta = async (req, res) => {
 
         console.log(`🔄 Actualizando estado de venta ${id} a ${id_estado_venta}`);
 
-        let query = `UPDATE venta SET id_estado_venta = ?, fecha_actualizacion = NOW()`;
+        // ✅ NUEVO: Si el estado es "Pagado" (7) o "Cancelado" (8) y la ruta fue iniciada, registrar fin de ruta
+        let fechaFinRutaClause = '';
+        if (id_estado_venta === 7 || id_estado_venta === 8) {
+            // Verificar si la ruta fue iniciada
+            const [ventaInfo] = await db.execute(
+                'SELECT fecha_inicio_ruta FROM venta WHERE id_venta = ?',
+                [id]
+            );
+            
+            if (ventaInfo.length > 0 && ventaInfo[0].fecha_inicio_ruta) {
+                fechaFinRutaClause = ', fecha_fin_ruta = NOW(), tracking_activo = FALSE';
+            }
+        }
+
+        let query = `UPDATE venta SET id_estado_venta = ?, fecha_actualizacion = NOW()${fechaFinRutaClause}`;
         let params = [id_estado_venta];
 
         if (id_repartidor !== undefined) {
@@ -465,7 +480,7 @@ export const updateEstadoVenta = async (req, res) => {
         res.json({ 
             message: 'Estado actualizado correctamente',
             id_estado_venta: id_estado_venta,
-            estado: nombreEstado, // ✅ Incluir el nombre del estado
+            estado: nombreEstado,
             id_repartidor: id_repartidor || null
         });
     } catch (error) {

@@ -7,7 +7,9 @@ import {
     getVentaDetalleAsignada,
     updateEstadoVentaRepartidor, // Nueva función
     cancelarEntregaRepartidor,
-    iniciarRutaEntrega    // Nueva función
+    iniciarRutaEntrega ,
+    verificarPuedeMarcarPagado,
+    cambiarMetodoPago  // NUEVA IMPORTACIÓN
 } from '../controllers/repartidor-venta.controller.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 
@@ -26,4 +28,9 @@ router.get('/repartidor/detalle/:id', requireRole([3], 'rutas_asignadas'), getVe
 router.patch('/repartidor/:id/pagado', requireRole([3], 'entregas_pendientes'), updateEstadoVentaRepartidor);
 router.patch('/repartidor/:id/cancelado', requireRole([3], 'entregas_pendientes'), cancelarEntregaRepartidor);
 router.patch('/repartidor/:id/iniciar-ruta', requireRole([3], 'rutas_asignadas'), iniciarRutaEntrega);
+// Agregar nueva ruta de verificación
+// Agrega la nueva ruta de verificación
+router.get('/repartidor/:id/verificar-pago', requireRole([3], 'entregas_pendientes'), verificarPuedeMarcarPagado);
+// NUEVA RUTA PARA CAMBIAR MÉTODO DE PAGO
+router.patch('/repartidor/:id/cambiar-metodo-pago', requireRole([3], 'entregas_pendientes'), cambiarMetodoPago);
 export default router;

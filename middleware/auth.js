@@ -64,8 +64,8 @@ export const requireRole = (roles, modulo) => {
             'inventario_movimiento','inventario_reportes', 'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas'
         ],
         2: [ // Vendedor
-            // 'productos', 
-            'clientes','ventas','ventas_asignacion_rutas'
+            //  
+            'clientes','productos','ventas','ventas_asignacion_rutas'
         ],
         3: [ // Repartidor
             'rutas_asignadas', 'entregas_pendientes', 'historial_entregas'

@@ -116,42 +116,56 @@ export const getMovimientosByProducto = async (req, res) => {
   }
 };
 
-// En createMovimiento - MEJORAR para incluir información del lote en la respuesta
 export const createMovimiento = async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
 
-    const { id_producto, tipo_movimiento, cantidad, descripcion, id_lote = null } = req.body;
+    const { id_producto, tipo_movimiento, cantidad, descripcion, id_lote } = req.body;
     const id_usuario = req.user.id_usuario;
 
-    // Validar tipo de movimiento
+    console.log('📦 DATOS MOVIMIENTO RECIBIDOS:', { 
+      id_producto, tipo_movimiento, cantidad, id_lote, id_usuario 
+    });
+
+    // Validaciones básicas
+    if (!id_producto || !tipo_movimiento || !cantidad) {
+      await connection.rollback();
+      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
+
     const tiposValidos = ['ingreso', 'egreso', 'ajuste', 'devolucion'];
     if (!tiposValidos.includes(tipo_movimiento)) {
+      await connection.rollback();
       return res.status(400).json({ message: "Tipo de movimiento no válido" });
     }
 
-    // Si es un ingreso y no tiene lote, crear uno automáticamente
-    let loteId = id_lote;
-    let numeroLoteCreado = null;
-    
-    if (tipo_movimiento === 'ingreso' && !id_lote) {
-      numeroLoteCreado = `LOTE-AUTO-${Date.now()}`;
-      const [loteResult] = await connection.query(
-        `INSERT INTO lote_producto 
-         (id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_actual) 
-         VALUES (?, ?, DATE_ADD(CURDATE(), INTERVAL 1 YEAR), ?, ?)`,
-        [id_producto, numeroLoteCreado, cantidad, cantidad]
+    // Si es egreso/ajuste y tiene lote, validar stock del lote
+    if (id_lote && (tipo_movimiento === 'egreso' || tipo_movimiento === 'ajuste')) {
+      const [loteRows] = await connection.query(
+        'SELECT cantidad_actual FROM lote_producto WHERE id_lote = ? AND activo = 1',
+        [id_lote]
       );
-      loteId = loteResult.insertId;
+      
+      if (loteRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ message: "Lote no encontrado" });
+      }
+      
+      if (loteRows[0].cantidad_actual < cantidad) {
+        await connection.rollback();
+        return res.status(400).json({ 
+          message: `Stock insuficiente en el lote. Disponible: ${loteRows[0].cantidad_actual}` 
+        });
+      }
     }
 
-    // Insertar el movimiento CON LOTE
+    // Insertar movimiento
     const [result] = await connection.query(
       `INSERT INTO movimiento_stock 
        (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, id_lote) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, loteId]
+      [id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, id_lote || null]
     );
 
     // Actualizar stock del producto
@@ -162,46 +176,40 @@ export const createMovimiento = async (req, res) => {
     );
 
     // Si tiene lote, actualizar cantidad del lote
-    if (loteId) {
+    if (id_lote) {
       const loteModificacion = (tipo_movimiento === 'ingreso' || tipo_movimiento === 'devolucion') ? cantidad : -cantidad;
       await connection.query(
         `UPDATE lote_producto SET cantidad_actual = cantidad_actual + ? WHERE id_lote = ?`,
-        [loteModificacion, loteId]
+        [loteModificacion, id_lote]
       );
     }
 
     await connection.commit();
     
-    // ✅ MEJORADO: Incluir información del lote en la respuesta
-    let loteInfo = null;
-    if (loteId) {
-      const [loteRows] = await db.query(
-        'SELECT numero_lote, fecha_caducidad FROM lote_producto WHERE id_lote = ?',
-        [loteId]
-      );
-      if (loteRows.length > 0) {
-        loteInfo = {
-          numero_lote: loteRows[0].numero_lote,
-          fecha_caducidad: loteRows[0].fecha_caducidad
-        };
-      }
-    }
-    
+    // Obtener información completa del movimiento creado
+    const [movimientoCompleto] = await connection.query(`
+      SELECT m.*, p.nombre as nombre_producto, lp.numero_lote
+      FROM movimiento_stock m
+      LEFT JOIN producto p ON m.id_producto = p.id_producto
+      LEFT JOIN lote_producto lp ON m.id_lote = lp.id_lote
+      WHERE m.id_movimiento = ?
+    `, [result.insertId]);
+
     res.status(201).json({ 
-      id_movimiento: result.insertId,
-      id_lote: loteId,
-      lote: loteInfo,  // ✅ NUEVO: Incluir info del lote
+      movimiento: movimientoCompleto[0],
       message: "Movimiento registrado correctamente" 
     });
   } catch (error) {
     await connection.rollback();
-    console.error("Error al crear movimiento:", error);
-    res.status(500).json({ message: "Error al registrar movimiento" });
+    console.error("❌ ERROR al crear movimiento:", error);
+    res.status(500).json({ 
+      message: "Error al registrar movimiento",
+      error: error.message 
+    });
   } finally {
     connection.release();
   }
 };
-
 // ... mantener los métodos updateMovimiento y deleteMovimiento existentes
 
 // Actualizar movimiento

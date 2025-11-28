@@ -1,6 +1,35 @@
 // src/controllers/lote.controller.js
 import db from "../config/db.js";
-
+// src/controllers/lote.controller.js - AGREGAR AL INICIO
+const generarNumeroLoteUnico = async (connection, prefijo, idProducto) => {
+  const fecha = new Date();
+  const año = fecha.getFullYear();
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  
+  const baseLote = `${prefijo}-${año}${mes}`;
+  
+  // Buscar lotes del mismo mes y producto
+  const [lotesExistentes] = await connection.query(
+    `SELECT numero_lote FROM lote_producto 
+     WHERE numero_lote LIKE ? AND id_producto = ? AND activo = 1
+     ORDER BY id_lote DESC LIMIT 1`,
+    [`${baseLote}-%`, idProducto]
+  );
+  
+  let consecutivo = 1;
+  if (lotesExistentes.length > 0) {
+    const ultimoLote = lotesExistentes[0].numero_lote;
+    const partes = ultimoLote.split('-');
+    if (partes.length > 2) {
+      const ultimoConsecutivo = parseInt(partes[2]);
+      if (!isNaN(ultimoConsecutivo)) {
+        consecutivo = ultimoConsecutivo + 1;
+      }
+    }
+  }
+  
+  return `${baseLote}-${consecutivo.toString().padStart(3, '0')}`;
+};
 // Obtener todos los lotes
 export const getLotes = async (req, res) => {
   try {
@@ -92,7 +121,6 @@ export const getLoteById = async (req, res) => {
     res.status(500).json({ message: "Error al obtener lote" });
   }
 };
-
 // Crear nuevo lote
 export const createLote = async (req, res) => {
   const connection = await db.getConnection();
@@ -102,27 +130,16 @@ export const createLote = async (req, res) => {
     const { id_producto, numero_lote, fecha_caducidad, cantidad_inicial } = req.body;
     const id_usuario = req.user.id_usuario;
 
-    // ✅ DEBUG DETALLADO
-    console.log('📦 DATOS RECIBIDOS EN BACKEND:');
-    console.log('   - id_producto:', id_producto);
-    console.log('   - numero_lote:', numero_lote);
-    console.log('   - fecha_caducidad:', fecha_caducidad, '(tipo:', typeof fecha_caducidad, ')');
-    console.log('   - cantidad_inicial:', cantidad_inicial);
-    console.log('   - id_usuario:', id_usuario);
+    console.log('📦 DATOS RECIBIDOS EN BACKEND:', req.body);
 
-    // Validar que todos los campos estén presentes
     if (!fecha_caducidad) {
-      console.log('❌ ERROR: fecha_caducidad es null o undefined');
       await connection.rollback();
-      return res.status(400).json({ 
-        message: "La fecha de caducidad es obligatoria",
-        details: `Fecha recibida: ${fecha_caducidad}`
-      });
+      return res.status(400).json({ message: "La fecha de caducidad es obligatoria" });
     }
 
-    // Validar que el producto exista
+    // Validar producto
     const [productoRows] = await connection.query(
-      "SELECT id_producto FROM producto WHERE id_producto = ? AND activo = 1",
+      "SELECT nombre FROM producto WHERE id_producto = ? AND activo = 1",
       [id_producto]
     );
     
@@ -131,49 +148,80 @@ export const createLote = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    // Verificar si ya existe un lote con el mismo número
-    const [loteExistente] = await connection.query(
-      "SELECT id_lote FROM lote_producto WHERE numero_lote = ? AND activo = 1",
-      [numero_lote]
-    );
-    
-    if (loteExistente.length > 0) {
-      await connection.rollback();
-      return res.status(409).json({ message: "Ya existe un lote con este número" });
+    // -------------------------------
+    // 🚀 GENERAR NUMERO DE LOTE
+    // -------------------------------
+    let numeroLoteFinal = numero_lote;
+
+    if (!numero_lote || numero_lote.trim() === "") {
+      // Obtener prefijo según nombre del producto
+      const nombre = productoRows[0].nombre;
+      let prefijo = "LOTE";
+
+      if (nombre.includes("Bella")) prefijo = "BL";
+      else if (nombre.includes("Viña")) prefijo = "VL";
+      else if (nombre.includes("Paquete")) prefijo = "PK";
+
+      numeroLoteFinal = await generarNumeroLoteUnico(connection, prefijo, id_producto);
+      console.log("🔢 Numero de lote generado:", numeroLoteFinal);
+    } else {
+      // verificar lote duplicado SOLO si el usuario envía uno manual
+      const [loteExistente] = await connection.query(
+        "SELECT id_lote FROM lote_producto WHERE numero_lote = ? AND activo = 1",
+        [numero_lote]
+      );
+
+      if (loteExistente.length > 0) {
+        await connection.rollback();
+        return res.status(409).json({ message: "Ya existe un lote con este número" });
+      }
     }
 
-    // Insertar el lote
+    // -------------------------------
+    // 🟢 INSERTAR LOTE
+    // -------------------------------
     const [result] = await connection.query(
       `INSERT INTO lote_producto 
-       (id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_actual) 
+        (id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_actual) 
        VALUES (?, ?, ?, ?, ?)`,
-      [id_producto, numero_lote, fecha_caducidad, cantidad_inicial, cantidad_inicial]
+      [id_producto, numeroLoteFinal, fecha_caducidad, cantidad_inicial, cantidad_inicial]
     );
 
-    // Registrar movimiento de stock (ingreso)
+    // -------------------------------
+    // 🟢 REGISTRAR MOVIMIENTO STOCK
+    // -------------------------------
     await connection.query(
       `INSERT INTO movimiento_stock 
-       (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario) 
-       VALUES (?, 'ingreso', ?, 'Ingreso por creación de lote ${numero_lote}', ?)`,
-      [id_producto, cantidad_inicial, id_usuario]
+        (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario) 
+       VALUES (?, 'ingreso', ?, ?, ?)`,
+      [
+        id_producto,
+        cantidad_inicial,
+        `Ingreso por creación de lote ${numeroLoteFinal}`,
+        id_usuario
+      ]
     );
 
-    // Actualizar stock del producto
+    // -------------------------------
+    // 🟢 ACTUALIZAR STOCK PRODUCTO
+    // -------------------------------
     await connection.query(
       "UPDATE producto SET stock = stock + ? WHERE id_producto = ?",
       [cantidad_inicial, id_producto]
     );
 
     await connection.commit();
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       id_lote: result.insertId,
-      message: "Lote creado correctamente" 
+      numero_lote: numeroLoteFinal,
+      message: "Lote creado correctamente"
     });
-   } catch (error) {
+
+  } catch (error) {
     await connection.rollback();
     console.error("❌ ERROR DETALLADO al crear lote:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Error al crear lote",
       error: error.message,
       sql: error.sql 
@@ -182,6 +230,7 @@ export const createLote = async (req, res) => {
     connection.release();
   }
 };
+
 
 // Actualizar lote
 export const updateLote = async (req, res) => {

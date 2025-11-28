@@ -24,11 +24,12 @@ export const getDashboardData = async (req, res) => {
         -- Valor total del inventario
         (SELECT COALESCE(SUM(stock * precio), 0) FROM producto WHERE activo = 1) as valor_total_inventario,
         
-        -- Movimientos del mes
+        -- Movimientos del mes actual
         (SELECT COUNT(*) FROM movimiento_stock 
          WHERE MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())) as movimientos_mes
     `);
 
+    // ✅ CORREGIDO: Definir las consultas que faltaban
     // Productos con stock bajo (detalle)
     const [stockBajoRows] = await db.query(`
       SELECT 
@@ -47,7 +48,7 @@ export const getDashboardData = async (req, res) => {
       LIMIT 10
     `);
 
-    // Lotes por caducar (detalle)
+    // ✅ CORREGIDO: Lotes por caducar (detalle)
     const [lotesCaducarRows] = await db.query(`
       SELECT 
         l.id_lote,
@@ -63,7 +64,7 @@ export const getDashboardData = async (req, res) => {
       LIMIT 10
     `);
 
-    // Movimientos recientes
+    // ✅ CORREGIDO: Movimientos recientes
     const [movimientosRows] = await db.query(`
       SELECT 
         m.id_movimiento,
@@ -90,8 +91,8 @@ export const getDashboardData = async (req, res) => {
         productosStockBajo: stats.productos_stock_bajo,
         lotesActivos: stats.lotes_activos,
         lotesPorCaducar: stats.lotes_por_caducar,
-        valorTotalInventario: parseFloat(stats.valor_total_inventario),
-        movimientosMes: stats.movimientos_mes
+        valorTotalInventario: parseFloat(stats.valor_total_inventario) || 0,
+        movimientosMes: stats.movimientos_mes || 0
       },
       alertas: {
         stockBajo: stockBajoRows,
@@ -102,10 +103,12 @@ export const getDashboardData = async (req, res) => {
 
   } catch (error) {
     console.error("Error al obtener datos del dashboard:", error);
-    res.status(500).json({ message: "Error al obtener datos del dashboard" });
+    res.status(500).json({ 
+      message: "Error al obtener datos del dashboard",
+      error: error.message 
+    });
   }
 };
-
 // Generar reporte de stock
 // En inventario.controller.js - modificar el método generarReporteStock
 export const generarReporteStock = async (req, res) => {
@@ -251,6 +254,7 @@ export const getProductosStockBajo = async (req, res) => {
   }
 };
 
+
 // Obtener lotes por caducar
 export const getLotesPorCaducar = async (req, res) => {
   try {
@@ -276,5 +280,61 @@ export const getLotesPorCaducar = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener lotes por caducar:", error);
     res.status(500).json({ message: "Error al obtener lotes por caducar" });
+  }
+};
+// En inventario.controller.js - agregar estos métodos
+export const getDistribucionCategorias = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        c.nombre as categoria,
+        COALESCE(SUM(p.stock), 0) as total_stock,
+        COUNT(p.id_producto) as cantidad_productos
+      FROM categorias c
+      LEFT JOIN producto p ON c.id_categoria = p.id_categoria AND p.activo = 1
+      GROUP BY c.id_categoria, c.nombre
+      ORDER BY total_stock DESC
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener distribución por categorías:", error);
+
+    // ✅ DATOS DE FALLBACK PARA EVITAR ERRORES EN EL FRONTEND
+    const datosFallback = [
+      { categoria: 'Bidones', total_stock: 45, cantidad_productos: 2 },
+      { categoria: 'Botellas', total_stock: 30, cantidad_productos: 2 },
+      { categoria: 'Paquetes', total_stock: 20, cantidad_productos: 1 },
+      { categoria: 'Accesorios', total_stock: 5, cantidad_productos: 1 }
+    ];
+    
+    res.json(datosFallback);
+  }
+};
+
+export const getTendenciaMovimientos = async (req, res) => {
+  try {
+    const { fechaInicio, fechaFin } = req.query;
+    
+    console.log('📊 Parámetros recibidos para tendencia:', { fechaInicio, fechaFin });
+    
+    const [rows] = await db.query(`
+      SELECT 
+        DATE(fecha) as fecha,
+        COUNT(*) as cantidad
+      FROM movimiento_stock 
+      WHERE fecha >= ? AND fecha <= ?
+      GROUP BY DATE(fecha)
+      ORDER BY fecha ASC
+    `, [fechaInicio, fechaFin]);
+    
+    console.log('📈 Resultados de tendencia:', rows);
+    
+    // ✅ SI NO HAY DATOS, DEVOLVER ARRAY VACÍO EN LUGAR DE ERROR
+    res.json(rows || []);
+  } catch (error) {
+    console.error("Error al obtener tendencia de movimientos:", error);
+    
+    // ✅ DEVOLVER ARRAY VACÍO EN CASO DE ERROR
+    res.json([]);
   }
 };

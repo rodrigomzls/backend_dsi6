@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 16-12-2025 a las 03:41:05
+-- Tiempo de generación: 17-12-2025 a las 02:31:58
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -132,7 +132,10 @@ CREATE TABLE `comprobante_sunat` (
 --
 
 INSERT INTO `comprobante_sunat` (`id_comprobante`, `id_venta`, `tipo`, `serie`, `numero_secuencial`, `xml_generado`, `estado`, `respuesta_sunat`, `fecha_generacion`, `fecha_envio`, `intentos_envio`, `ruc_cliente`, `dni_cliente`, `cliente_nombre`, `total`) VALUES
-(1, 39, 'FACTURA', 'F001', 1, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_abca2ccbdc3870ed60206e91b9f86bc0\",\"estado\":\"ACEPTADO\"}', '2025-12-14 21:13:52', '2025-12-14 21:13:52', 1, NULL, NULL, 'Gimnasio Power Futal', 6.00);
+(1, 39, 'FACTURA', 'F001', 1, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_abca2ccbdc3870ed60206e91b9f86bc0\",\"estado\":\"ACEPTADO\"}', '2025-12-14 21:13:52', '2025-12-14 21:13:52', 1, NULL, NULL, 'Gimnasio Power Futal', 6.00),
+(4, 44, 'FACTURA', 'F001', 2, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_d6f9a3e8ee46ea78e288003e94e58e6e\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:04:55', '2025-12-16 03:04:55', 1, NULL, NULL, 'Gimnasio Power Futal', 12.00),
+(5, 43, 'FACTURA', 'F001', 3, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_ee00ab8d37f550a8e330ed4aa6825f34\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:10:24', '2025-12-16 03:10:24', 1, NULL, NULL, 'Ernesto Gabriel Rengifo Lopez', 8.00),
+(6, 2, 'FACTURA', 'F001', 4, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_7323c8c931507a98d17230ca93fbffcd\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:44:25', '2025-12-16 03:44:25', 1, NULL, NULL, 'Gimnasio Power Futal', 8.50);
 
 -- --------------------------------------------------------
 
@@ -771,7 +774,7 @@ CREATE TABLE `venta` (
 --
 
 INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`, `fecha_inicio_ruta`, `fecha_fin_ruta`, `ubicacion_inicio_ruta`, `tracking_activo`, `comprobante_emitido`) VALUES
-(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-11-03 19:59:31', NULL, NULL, NULL, 0, 0),
+(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-12-16 03:44:25', NULL, NULL, NULL, 0, 1),
 (3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25', NULL, NULL, NULL, 0, 0),
 (4, 1, '2025-10-21', '22:52:17', 8.50, 1, 7, 1, 3, '', '2025-10-22 03:52:17', '2025-11-08 21:19:37', NULL, NULL, NULL, 0, 0),
 (5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41', NULL, NULL, NULL, 0, 0),
@@ -799,8 +802,8 @@ INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_met
 (40, 1, '2025-11-23', '18:07:04', 9.00, 2, 5, 1, 6, NULL, '2025-11-23 23:07:04', '2025-11-23 23:50:37', NULL, NULL, NULL, 0, 0),
 (41, 15, '2025-11-23', '18:49:52', 12.00, 2, 5, 1, 6, NULL, '2025-11-23 23:49:52', '2025-12-13 02:10:32', '2025-12-12 21:10:07', NULL, '-12.075008,-77.021184', 1, 0),
 (42, 8, '2025-11-23', '19:49:14', 6.00, 1, 5, 3, 6, NULL, '2025-11-24 00:49:14', '2025-11-24 00:49:30', NULL, NULL, NULL, 0, 0),
-(43, 12, '2025-11-23', '19:50:31', 8.00, 2, 7, 3, 6, NULL, '2025-11-24 00:50:31', '2025-12-11 02:53:03', '2025-11-23 19:57:53', '2025-12-10 21:53:03', '-12.075008,-77.021184', 0, 0),
-(44, 3, '2025-11-24', '14:31:24', 12.00, 2, 7, 1, 6, NULL, '2025-11-24 19:31:24', '2025-11-24 19:35:49', '2025-11-24 14:33:20', '2025-11-24 14:35:49', '-8.3918551,-74.5538237', 0, 0),
+(43, 12, '2025-11-23', '19:50:31', 8.00, 2, 7, 3, 6, NULL, '2025-11-24 00:50:31', '2025-12-16 03:10:24', '2025-11-23 19:57:53', '2025-12-10 21:53:03', '-12.075008,-77.021184', 0, 1),
+(44, 3, '2025-11-24', '14:31:24', 12.00, 2, 7, 1, 6, NULL, '2025-11-24 19:31:24', '2025-12-16 03:04:55', '2025-11-24 14:33:20', '2025-11-24 14:35:49', '-8.3918551,-74.5538237', 0, 1),
 (45, 15, '2025-12-02', '14:20:53', 24.00, 1, 5, 3, 6, NULL, '2025-12-02 19:20:53', '2025-12-02 19:21:10', NULL, NULL, NULL, 0, 0),
 (46, 12, '2025-12-03', '08:56:19', 600.00, 1, 7, 1, 6, NULL, '2025-12-03 13:56:19', '2025-12-03 14:01:32', '2025-12-03 09:00:14', '2025-12-03 09:01:32', '-12.075008,-77.0244608', 0, 0),
 (47, 11, '2025-12-04', '23:49:17', 4.50, 1, 5, 3, 3, NULL, '2025-12-05 04:49:17', '2025-12-05 04:49:31', NULL, NULL, NULL, 0, 0),
@@ -1212,7 +1215,7 @@ ALTER TABLE `cliente`
 -- AUTO_INCREMENT de la tabla `comprobante_sunat`
 --
 ALTER TABLE `comprobante_sunat`
-  MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`

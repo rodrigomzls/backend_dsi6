@@ -8,7 +8,7 @@ export const getVentas = async (req, res) => {
             SELECT 
                 v.id_venta,
                 v.id_cliente,
-                DATE_FORMAT(v.fecha, '%Y-%m-%d') as fecha,  -- ✅ FORMATO EXPLÍCITO
+                DATE_FORMAT(v.fecha, '%Y-%m-%d') as fecha,
                 TIME(v.hora) as hora,
                 v.total,
                 v.id_metodo_pago,
@@ -18,6 +18,7 @@ export const getVentas = async (req, res) => {
                 v.notas,
                 v.fecha_creacion,
                 v.fecha_actualizacion,
+                v.tipo_comprobante_solicitado,  -- ✅ AGREGAR ESTE CAMPO
                 c.razon_social, 
                 p_cliente.telefono,
                 p_cliente.direccion,
@@ -52,8 +53,8 @@ export const getVentaById = async (req, res) => {
             SELECT 
                 v.id_venta,
                 v.id_cliente,
-                DATE(v.fecha) as fecha,  -- ✅ FORMATO CORRECTO
-                TIME(v.hora) as hora,    -- ✅ FORMATO CORRECTO
+                DATE(v.fecha) as fecha,
+                TIME(v.hora) as hora,
                 v.total,
                 v.id_metodo_pago,
                 v.id_estado_venta,
@@ -62,6 +63,7 @@ export const getVentaById = async (req, res) => {
                 v.notas,
                 v.fecha_creacion,
                 v.fecha_actualizacion,
+                v.tipo_comprobante_solicitado,  -- ✅ AGREGAR ESTE CAMPO
                 c.razon_social, 
                 p_cliente.telefono,
                 p_cliente.direccion,
@@ -104,6 +106,7 @@ export const getVentaById = async (req, res) => {
 };
 // En venta.controller.js - mejora las validaciones de detalles
 // En createVenta - MODIFICAR para manejar lotes específicos
+// En venta.controller.js - MODIFICA createVenta para incluir tipo_comprobante_solicitado
 export const createVenta = async (req, res) => {
   console.log('🔍 REQ.BODY COMPLETO:', JSON.stringify(req.body, null, 2));
   console.log('🔍 REQ.USER:', req.user);
@@ -113,22 +116,20 @@ export const createVenta = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-      // ✅ 4. SOLUCIÓN ALTERNATIVA TEMPORAL - Agrega esta función al principio
-  // ✅ FUNCIÓN MEJORADA DE SANITIZACIÓN
-const sanitizeParams = (params) => {
-  return params.map(param => {
-    if (param === undefined || param === '') {
-      console.warn('⚠️  Parámetro undefined o vacío detectado, convirtiendo a null');
-      return null;
-    }
-    // Si es string, limpiar espacios
-    if (typeof param === 'string') {
-      const cleaned = param.trim();
-      return cleaned === '' ? null : cleaned;
-    }
-    return param;
-  });
-};
+    // ✅ FUNCIÓN MEJORADA DE SANITIZACIÓN
+    const sanitizeParams = (params) => {
+      return params.map(param => {
+        if (param === undefined || param === '') {
+          console.warn('⚠️  Parámetro undefined o vacío detectado, convirtiendo a null');
+          return null;
+        }
+        if (typeof param === 'string') {
+          const cleaned = param.trim();
+          return cleaned === '' ? null : cleaned;
+        }
+        return param;
+      });
+    };
 
     // ✅ FUNCIÓN DE SEGURIDAD MEJORADA
     const safeValue = (value, defaultValue = null) => {
@@ -145,7 +146,8 @@ const sanitizeParams = (params) => {
       id_estado_venta = 1,
       id_repartidor,
       notas = '',
-      detalles = []
+      detalles = [],
+      tipo_comprobante_solicitado = 'SIN_COMPROBANTE' // ✅ NUEVO: Recibir el tipo de comprobante
     } = req.body;
 
     // ✅ VALIDACIÓN Y CONVERSIÓN SEGURA CON DEBUGGING
@@ -165,6 +167,15 @@ const sanitizeParams = (params) => {
 
     const notasFinal = safeValue(notas, '');
     console.log(`   - notas: "${notas}" -> "${notasFinal}" (tipo: ${typeof notasFinal})`);
+
+    // ✅ NUEVO: Validar y limpiar tipo de comprobante
+    let tipoComprobanteFinal = safeValue(tipo_comprobante_solicitado, 'SIN_COMPROBANTE');
+    // Validar valores permitidos
+    const tiposPermitidos = ['FACTURA', 'BOLETA', 'SIN_COMPROBANTE'];
+    if (!tiposPermitidos.includes(tipoComprobanteFinal)) {
+      tipoComprobanteFinal = 'SIN_COMPROBANTE';
+    }
+    console.log(`   - tipo_comprobante_solicitado: "${tipo_comprobante_solicitado}" -> "${tipoComprobanteFinal}" (tipo: ${typeof tipoComprobanteFinal})`);
 
     // ✅ VERIFICAR QUE EL USUARIO EXISTA EN REQ.USER
     if (!req.user || !req.user.id_usuario) {
@@ -186,17 +197,18 @@ const sanitizeParams = (params) => {
       return res.status(400).json({ error: 'Debe agregar al menos un producto' });
     }
 
-    // ✅ PREPARAR PARÁMETROS CON DEBUGGING
+    // ✅ PREPARAR PARÁMETROS CON DEBUGGING (AHORA CON 10 PARÁMETROS)
     const params = [
       clienteFinal, 
       metodoPagoFinal, 
       estadoVentaFinal, 
       repartidorFinal, 
       id_vendedor, 
-      notasFinal
+      notasFinal,
+      tipoComprobanteFinal  // ✅ AGREGAR ESTE PARÁMETRO
     ];
 
-    console.log('🔍 PARÁMETROS PARA INSERT VENTA:');
+    console.log('🔍 PARÁMETROS PARA INSERT VENTA (10 parámetros):');
     params.forEach((param, index) => {
       console.log(`   [${index}]: ${param} (tipo: ${typeof param})`);
     });
@@ -208,27 +220,22 @@ const sanitizeParams = (params) => {
       return res.status(400).json({ error: 'Parámetros inválidos: contiene undefined' });
     }
 
-    // 1. Crear la venta
+    // 1. Crear la venta (MODIFICADO PARA INCLUIR tipo_comprobante_solicitado)
     console.log('🚀 EJECUTANDO INSERT EN VENTA...');
     const [result] = await connection.execute(`
-      INSERT INTO venta (id_cliente, fecha, hora, total, id_metodo_pago, 
-                       id_estado_venta, id_repartidor, id_vendedor, notas)
-      VALUES (?, CURDATE(), CURTIME(), 0, ?, ?, ?, ?, ?)
-    `, sanitizeParams([  // ✅ Aplica sanitizeParams aquí
-      clienteFinal, 
-      metodoPagoFinal, 
-      estadoVentaFinal, 
-      repartidorFinal, 
-      id_vendedor, 
-      notasFinal
-    ]));
+      INSERT INTO venta (
+        id_cliente, fecha, hora, total, id_metodo_pago, 
+        id_estado_venta, id_repartidor, id_vendedor, notas,
+        tipo_comprobante_solicitado  -- ✅ AGREGAR ESTE CAMPO
+      ) VALUES (?, CURDATE(), CURTIME(), 0, ?, ?, ?, ?, ?, ?)  -- ✅ AGREGAR UN ?
+    `, sanitizeParams(params));  // ✅ Ahora params tiene 7 elementos
 
     const id_venta = result.insertId;
     let total_venta = 0;
 
-    console.log('🆕 Venta creada con ID:', id_venta);
+    console.log('🆕 Venta creada con ID:', id_venta, 'Tipo comprobante:', tipoComprobanteFinal);
 
-    // 2. Procesar detalles
+    // 2. Procesar detalles (esta parte queda igual)
     for (const detalle of detalles) {
       const { id_producto, cantidad, precio_unitario } = detalle;
       const subtotal = cantidad * precio_unitario;
@@ -240,18 +247,17 @@ const sanitizeParams = (params) => {
       const [detalleResult] = await connection.execute(`
         INSERT INTO venta_detalle (id_venta, id_producto, cantidad, precio_unitario)
         VALUES (?, ?, ?, ?)
-      `, sanitizeParams([id_venta, id_producto, cantidad, precio_unitario])); // ✅ Aplica sanitizeParams
+      `, sanitizeParams([id_venta, id_producto, cantidad, precio_unitario]));
 
       const id_detalle_venta = detalleResult.insertId;
 
-      // Obtener lotes disponibles (FIFO - por fecha de caducidad)
-  // En la línea donde obtienes los lotes, también puedes aplicar sanitizeParams:
-const [lotes] = await connection.execute(`
-  SELECT id_lote, cantidad_actual, numero_lote
-  FROM lote_producto 
-  WHERE id_producto = ? AND cantidad_actual > 0 AND activo = 1
-  ORDER BY fecha_caducidad ASC
-`, sanitizeParams([id_producto])); // ← Agregar sanitizeParams aquí también
+      // Obtener lotes disponibles
+      const [lotes] = await connection.execute(`
+        SELECT id_lote, cantidad_actual, numero_lote
+        FROM lote_producto 
+        WHERE id_producto = ? AND cantidad_actual > 0 AND activo = 1
+        ORDER BY fecha_caducidad ASC
+      `, sanitizeParams([id_producto]));
 
       let cantidadRestante = cantidad;
 
@@ -268,34 +274,25 @@ const [lotes] = await connection.execute(`
           numero_lote: lote.numero_lote 
         });
 
-        // ✅ 3. VERIFICACIÓN DE VENTA_DETALLE_LOTE - Agrega esto aquí
-        if (!id_detalle_venta || id_detalle_venta === undefined) {
-          throw new Error(`id_detalle_venta es undefined para el producto ${id_producto}`);
-        }
-
-        if (!lote.id_lote || lote.id_lote === undefined) {
-          throw new Error(`id_lote es undefined para el lote ${lote.numero_lote}`);
-        }
-
         // Registrar en venta_detalle_lote
         await connection.execute(`
           INSERT INTO venta_detalle_lote (id_detalle_venta, id_lote, cantidad)
           VALUES (?, ?, ?)
-        `, sanitizeParams([id_detalle_venta, lote.id_lote, cantidadATomar])); // ✅ Aplica sanitizeParams
+        `, sanitizeParams([id_detalle_venta, lote.id_lote, cantidadATomar]));
 
         // Actualizar stock del lote
         await connection.execute(`
           UPDATE lote_producto 
           SET cantidad_actual = cantidad_actual - ? 
           WHERE id_lote = ?
-        `, sanitizeParams([cantidadATomar, lote.id_lote])); // ✅ Aplica sanitizeParams
+        `, sanitizeParams([cantidadATomar, lote.id_lote]));
 
         // Registrar movimiento de stock por lote
         await connection.execute(`
           INSERT INTO movimiento_stock 
           (id_producto, tipo_movimiento, cantidad, descripcion, id_usuario, id_lote)
           VALUES (?, 'egreso', ?, 'Venta #${id_venta} - Lote ${lote.numero_lote}', ?, ?)
-        `, sanitizeParams([id_producto, cantidadATomar, id_vendedor, lote.id_lote])); // ✅ Aplica sanitizeParams
+        `, sanitizeParams([id_producto, cantidadATomar, id_vendedor, lote.id_lote]));
 
         cantidadRestante -= cantidadATomar;
       }
@@ -305,7 +302,7 @@ const [lotes] = await connection.execute(`
         UPDATE producto 
         SET stock = stock - ? 
         WHERE id_producto = ?
-      `, sanitizeParams([cantidad, id_producto])); // ✅ Aplica sanitizeParams
+      `, sanitizeParams([cantidad, id_producto]));
 
       // Verificar si hay suficiente stock
       if (cantidadRestante > 0) {
@@ -316,13 +313,17 @@ const [lotes] = await connection.execute(`
     // 3. Actualizar total de la venta
     await connection.execute(`
       UPDATE venta SET total = ? WHERE id_venta = ?
-    `, sanitizeParams([total_venta, id_venta])); // ✅ Aplica sanitizeParams
+    `, sanitizeParams([total_venta, id_venta]));
 
     await connection.commit();
 
-    console.log('✅ Venta completada exitosamente:', id_venta);
+    console.log('✅ Venta completada exitosamente:', {
+      id_venta,
+      tipo_comprobante: tipoComprobanteFinal,
+      total: total_venta
+    });
 
-    // 4. Devolver venta completa
+    // 4. Devolver venta completa (MODIFICADO PARA INCLUIR tipo_comprobante_solicitado)
     const [nuevaVenta] = await db.execute(`
       SELECT v.*, c.razon_social, ev.estado, mp.metodo_pago
       FROM venta v
@@ -334,6 +335,7 @@ const [lotes] = await connection.execute(`
 
     res.status(201).json({
       ...nuevaVenta[0],
+      tipo_comprobante_solicitado: tipoComprobanteFinal, // ✅ INCLUIR EN LA RESPUESTA
       detalles
     });
 
@@ -369,6 +371,7 @@ export const getVentasPorEstado = async (req, res) => {
                 v.notas,
                 v.fecha_creacion,
                 v.fecha_actualizacion,
+                v.tipo_comprobante_solicitado,
                 c.razon_social, 
                 p_cliente.telefono,
                 p_cliente.direccion,

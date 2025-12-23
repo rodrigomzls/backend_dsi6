@@ -184,6 +184,69 @@ class SunatController {
             });
         }
     }
-}
 
+async obtenerSiguienteNumero(req, res) {
+    const connection = await db.getConnection();
+    try {
+        const { tipo, id_cliente } = req.body;
+
+        // 1. Obtener información del cliente
+        const [clienteInfo] = await connection.execute(`
+            SELECT c.tipo_cliente, p.tipo_documento
+            FROM cliente c
+            JOIN persona p ON c.id_persona = p.id_persona
+            WHERE c.id_cliente = ?
+        `, [id_cliente]);
+
+        if (clienteInfo.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Cliente no encontrado'
+            });
+        }
+
+        const cliente = clienteInfo[0];
+        
+        // 2. Determinar la serie
+        let serie = '';
+        if (tipo === 'FACTURA') {
+            serie = 'F001';
+        } else if (tipo === 'BOLETA') {
+            serie = 'B001';
+        } else {
+            return res.status(400).json({
+                success: false,
+                error: 'Tipo de comprobante no válido'
+            });
+        }
+
+        // ✅ EJECUTAR CONSULTA DIRECTAMENTE
+        const [result] = await connection.execute(
+            'SELECT COALESCE(MAX(numero_secuencial), 0) + 1 as siguiente_numero FROM comprobante_sunat WHERE tipo = ? AND serie = ?',
+            [tipo, serie]
+        );
+        
+        const siguienteNumero = result[0]?.siguiente_numero || 1;
+
+        res.json({
+            success: true,
+            tipo,
+            serie,
+            numero_secuencial: siguienteNumero,
+            correlativo: siguienteNumero.toString().padStart(8, '0'),
+            serie_numero: `${serie}-${siguienteNumero.toString().padStart(8, '0')}`
+        });
+
+    } catch (error) {
+        console.error('❌ Error en obtenerSiguienteNumero:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    } finally {
+        connection.release();
+    }
+}
+}
+// ✅ Exportar la instancia correctamente
 export default new SunatController();

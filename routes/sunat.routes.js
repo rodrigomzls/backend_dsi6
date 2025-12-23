@@ -2,10 +2,11 @@
 import express from 'express';
 import sunatController from '../controllers/sunat.controller.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
-
 const router = express.Router();
 
 router.use(verifyToken);
+// ✅ RUTA PARA OBTENER SIGUIENTE NÚMERO
+router.post('/siguiente-numero', requireRole([1, 2], 'sunat'), sunatController.obtenerSiguienteNumero);
 
 // Emitir comprobante
 router.post('/venta/:idVenta/emitir', requireRole([1, 2], 'sunat'), sunatController.emitirComprobante);

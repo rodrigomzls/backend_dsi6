@@ -16,6 +16,19 @@ class SunatService {
 
             // 1. Obtener venta completa
             const venta = await this.obtenerVentaCompleta(connection, idVenta);
+            // ✅ NUEVO: Verificar el tipo de comprobante solicitado
+        const tipoSolicitado = venta.tipo_comprobante_solicitado;
+        
+        if (tipoSolicitado === 'SIN_COMPROBANTE') {
+            throw new Error('Esta venta fue registrada sin comprobante electrónico');
+        }
+        
+        if (!tipoSolicitado || (tipoSolicitado !== 'FACTURA' && tipoSolicitado !== 'BOLETA')) {
+            // Usar lógica automática basada en tipo de cliente
+            const tipoAuto = venta.tipo_documento === 'RUC' ? 'FACTURA' : 'BOLETA';
+            venta.tipo_comprobante_solicitado = tipoAuto;
+        }
+        
             if (!venta) {
                 throw new Error(`Venta ${idVenta} no encontrada`);
             }
@@ -32,7 +45,10 @@ class SunatService {
             }
 
             // 4. Preparar datos para PHP
-            const datosParaPHP = await this.prepararDatosParaPHP(venta);
+            const datosParaPHP = await this.prepararDatosParaPHP(
+            venta, 
+            venta.tipo_comprobante_solicitado  // ← Pasar el tipo correcto
+        );
 
             // 5. Enviar al microservicio PHP
             console.log('📡 Enviando datos al microservicio PHP...');
@@ -113,23 +129,26 @@ class SunatService {
         return comprobantes.length > 0;
     }
 
-    async prepararDatosParaPHP(venta) {
-        const datos = {
-            id_venta: venta.id_venta,
-            fecha: venta.fecha,
-            total: parseFloat(venta.total),
-            cliente: {
-                id_cliente: venta.id_cliente,
-                tipo_cliente: venta.tipo_cliente,
-                tipo_documento: venta.tipo_documento,
-                numero_documento: venta.numero_documento,
-                nombre: venta.razon_social || venta.nombre_completo,
-                direccion: venta.direccion || 'DIRECCIÓN NO ESPECIFICADA',
-                telefono: venta.telefono || ''
-            },
-            detalles: []
-        };
-
+    async prepararDatosParaPHP(venta, tipoComprobante = null, serie = null, correlativo = null) {
+    const datos = {
+        id_venta: venta.id_venta,
+        fecha: venta.fecha,
+        total: parseFloat(venta.total),
+        // ✅ AGREGAR DATOS DE COMPROBANTE SI SE PROPORCIONAN
+        ...(tipoComprobante && { tipo: tipoComprobante }),
+        ...(serie && { serie: serie }),
+        ...(correlativo && { correlativo: correlativo }),
+        cliente: {
+            id_cliente: venta.id_cliente,
+            tipo_cliente: venta.tipo_cliente,
+            tipo_documento: venta.tipo_documento,
+            numero_documento: venta.numero_documento,
+            nombre: venta.razon_social || venta.nombre_completo,
+            direccion: venta.direccion || 'DIRECCIÓN NO ESPECIFICADA',
+            telefono: venta.telefono || ''
+        },
+        detalles: []
+    };
         for (const detalle of venta.detalles) {
             datos.detalles.push({
                 id_producto: detalle.id_producto,

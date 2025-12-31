@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-12-2025 a las 02:31:58
+-- Tiempo de generación: 30-12-2025 a las 20:15:34
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -43,6 +43,79 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_obtener_siguiente_numero` (IN `p
   INTO p_numero
   FROM comprobante_sunat 
   WHERE tipo = p_tipo AND serie = p_serie;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_registrar_entrega_dinero` (IN `p_id_repartidor` INT, IN `p_total` DECIMAL(10,2), IN `p_metodo_entrega` VARCHAR(20), IN `p_notas` TEXT, IN `p_id_usuario` INT)   BEGIN
+  DECLARE v_ultima_entrega DATETIME;
+  DECLARE v_minutos_desde_ultima INT;
+  
+  -- Verificar que no haya entregas muy recientes (evitar duplicados)
+  SELECT MAX(fecha_entrega) INTO v_ultima_entrega
+  FROM entrega_dinero_repartidor
+  WHERE id_repartidor = p_id_repartidor
+    AND DATE(fecha_entrega) = CURDATE();
+    
+  IF v_ultima_entrega IS NOT NULL THEN
+    SET v_minutos_desde_ultima = TIMESTAMPDIFF(MINUTE, v_ultima_entrega, NOW());
+    
+    IF v_minutos_desde_ultima < 5 THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Debe esperar al menos 5 minutos entre entregas';
+    END IF;
+  END IF;
+  
+  -- Validar monto mínimo
+  IF p_total < 1 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'El monto mínimo de entrega es S/ 1.00';
+  END IF;
+  
+  -- Insertar la entrega
+  INSERT INTO entrega_dinero_repartidor (
+    id_repartidor,
+    total,
+    metodo_entrega,
+    notas,
+    id_usuario_registro
+  ) VALUES (
+    p_id_repartidor,
+    p_total,
+    p_metodo_entrega,
+    p_notas,
+    p_id_usuario
+  );
+  
+  SELECT LAST_INSERT_ID() AS id_entrega;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_reporte_entregas` (IN `p_id_repartidor` INT, IN `p_fecha_inicio` DATE, IN `p_fecha_fin` DATE)   BEGIN
+  -- Reporte detallado
+  SELECT 
+    edr.id_entrega,
+    edr.total,
+    edr.metodo_entrega,
+    DATE_FORMAT(edr.fecha_entrega, '%Y-%m-%d') as fecha,
+    TIME(edr.fecha_entrega) as hora,
+    edr.notas,
+    edr.estado,
+    u.nombre_usuario as usuario_registro
+  FROM entrega_dinero_repartidor edr
+  LEFT JOIN usuario u ON edr.id_usuario_registro = u.id_usuario
+  WHERE edr.id_repartidor = p_id_repartidor
+    AND DATE(edr.fecha_entrega) BETWEEN p_fecha_inicio AND p_fecha_fin
+  ORDER BY edr.fecha_entrega DESC;
+  
+  -- Totales
+  SELECT 
+    COUNT(*) as total_entregas,
+    SUM(total) as monto_total,
+    AVG(total) as promedio,
+    MIN(total) as minimo,
+    MAX(total) as maximo,
+    GROUP_CONCAT(DISTINCT metodo_entrega) as metodos_utilizados
+  FROM entrega_dinero_repartidor
+  WHERE id_repartidor = p_id_repartidor
+    AND DATE(fecha_entrega) BETWEEN p_fecha_inicio AND p_fecha_fin;
 END$$
 
 DELIMITER ;
@@ -101,7 +174,8 @@ INSERT INTO `cliente` (`id_cliente`, `id_persona`, `tipo_cliente`, `razon_social
 (12, 27, 'Persona', NULL, 1, '2025-11-12 18:16:13'),
 (13, 28, 'Bodega', 'Huancas', 1, '2025-11-19 17:51:55'),
 (14, 29, 'Persona', NULL, 1, '2025-11-19 18:13:02'),
-(15, 31, 'Bodega', 'por el grifo sanjuan', 1, '2025-11-23 23:48:44');
+(15, 31, 'Bodega', 'por el grifo sanjuan', 1, '2025-11-23 23:48:44'),
+(16, 33, 'Persona', NULL, 1, '2025-12-28 15:57:15');
 
 -- --------------------------------------------------------
 
@@ -135,7 +209,12 @@ INSERT INTO `comprobante_sunat` (`id_comprobante`, `id_venta`, `tipo`, `serie`, 
 (1, 39, 'FACTURA', 'F001', 1, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_abca2ccbdc3870ed60206e91b9f86bc0\",\"estado\":\"ACEPTADO\"}', '2025-12-14 21:13:52', '2025-12-14 21:13:52', 1, NULL, NULL, 'Gimnasio Power Futal', 6.00),
 (4, 44, 'FACTURA', 'F001', 2, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_d6f9a3e8ee46ea78e288003e94e58e6e\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:04:55', '2025-12-16 03:04:55', 1, NULL, NULL, 'Gimnasio Power Futal', 12.00),
 (5, 43, 'FACTURA', 'F001', 3, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_ee00ab8d37f550a8e330ed4aa6825f34\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:10:24', '2025-12-16 03:10:24', 1, NULL, NULL, 'Ernesto Gabriel Rengifo Lopez', 8.00),
-(6, 2, 'FACTURA', 'F001', 4, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_7323c8c931507a98d17230ca93fbffcd\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:44:25', '2025-12-16 03:44:25', 1, NULL, NULL, 'Gimnasio Power Futal', 8.50);
+(6, 2, 'FACTURA', 'F001', 4, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_7323c8c931507a98d17230ca93fbffcd\",\"estado\":\"ACEPTADO\"}', '2025-12-16 03:44:25', '2025-12-16 03:44:25', 1, NULL, NULL, 'Gimnasio Power Futal', 8.50),
+(7, 50, 'FACTURA', 'F001', 5, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_276455930f7c8924199e6b43439c21be\",\"estado\":\"ACEPTADO\"}', '2025-12-17 14:50:32', '2025-12-17 14:50:32', 1, NULL, NULL, 'Bodega Don Pepin', 4.50),
+(8, 52, 'FACTURA', 'F001', 6, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_971b8050555898e0ae0cb51248a71c71\",\"estado\":\"ACEPTADO\"}', '2025-12-17 16:09:13', '2025-12-17 16:09:13', 1, NULL, NULL, 'Ernesto Gabriel Rengifo Lopez', 15.00),
+(9, 53, 'BOLETA', 'B001', 1, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_dd1eccbddc61b49c79935a9242867b2d\",\"estado\":\"ACEPTADO\"}', '2025-12-17 19:48:02', '2025-12-17 19:48:02', 1, NULL, NULL, 'Julio Carlos Santillama', 12.00),
+(10, 56, 'BOLETA', 'B001', 2, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_e8c0484e0b7ec96295a94dda51f6ca31\",\"estado\":\"ACEPTADO\"}', '2025-12-19 18:07:20', '2025-12-19 18:07:20', 1, NULL, NULL, 'Gimnasio Power Futal', 12.00),
+(11, 59, 'BOLETA', 'B001', 3, '<?xml version=\"1.0\"?><invoice>XML SIMULADO</invoice>', 'ACEPTADO', '{\"code\":\"0\",\"description\":\"La Factura ha sido aceptada\",\"notes\":[\"Generado en modo desarrollo\"],\"hash\":\"dev_6a1eb9bf209c62a97c03f0f42c460b4c\",\"estado\":\"ACEPTADO\"}', '2025-12-28 18:13:58', '2025-12-28 18:13:58', 1, NULL, NULL, 'Dennys gongora Farina', 53.50);
 
 -- --------------------------------------------------------
 
@@ -183,6 +262,38 @@ INSERT INTO `distrito` (`id_distrito`, `distrito`, `id_provincia`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `entrega_dinero_repartidor`
+--
+
+CREATE TABLE `entrega_dinero_repartidor` (
+  `id_entrega` int(11) NOT NULL,
+  `id_repartidor` int(11) NOT NULL,
+  `total` decimal(10,2) NOT NULL CHECK (`total` > 0),
+  `metodo_entrega` enum('efectivo','transferencia','yape') DEFAULT 'efectivo',
+  `fecha_entrega` timestamp NOT NULL DEFAULT current_timestamp(),
+  `estado` enum('pendiente','completado','verificado','rechazado') DEFAULT 'completado',
+  `notas` text DEFAULT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id_usuario_registro` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `entrega_dinero_ventas`
+--
+
+CREATE TABLE `entrega_dinero_ventas` (
+  `id_asociacion` int(11) NOT NULL,
+  `id_entrega` int(11) NOT NULL,
+  `id_venta` int(11) NOT NULL,
+  `monto_asignado` decimal(10,2) NOT NULL,
+  `fecha_asociacion` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `errores_sunat`
 --
 
@@ -199,7 +310,9 @@ CREATE TABLE `errores_sunat` (
 
 INSERT INTO `errores_sunat` (`id_error`, `id_venta`, `mensaje_error`, `fecha_error`) VALUES
 (1, 43, 'Duplicate entry \'F001-1-FACTURA\' for key \'unique_comprobante\'', '2025-12-15 00:30:17'),
-(2, 49, 'Duplicate entry \'F001-1-FACTURA\' for key \'unique_comprobante\'', '2025-12-15 21:22:37');
+(2, 49, 'Duplicate entry \'F001-1-FACTURA\' for key \'unique_comprobante\'', '2025-12-15 21:22:37'),
+(3, 53, 'Esta venta ya tiene un comprobante emitido', '2025-12-18 11:44:16'),
+(4, 59, 'Error', '2025-12-28 13:13:08');
 
 -- --------------------------------------------------------
 
@@ -299,13 +412,13 @@ CREATE TABLE `lote_producto` (
 --
 
 INSERT INTO `lote_producto` (`id_lote`, `id_producto`, `numero_lote`, `fecha_caducidad`, `cantidad_inicial`, `cantidad_actual`, `fecha_creacion`, `activo`) VALUES
-(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 91, '2025-10-18 20:18:44', 1),
-(2, 2, 'LOTE-002-2025', '2026-03-30', 80, 75, '2025-10-18 20:18:44', 1),
-(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 62, '2025-10-18 20:18:44', 1),
-(4, 4, 'LOTE-004-2025', '2026-03-30', 150, 150, '2025-10-18 20:18:44', 1),
+(1, 1, 'LOTE-001-2025', '2026-03-30', 100, 80, '2025-10-18 20:18:44', 1),
+(2, 2, 'LOTE-002-2025', '2026-03-30', 80, 68, '2025-10-18 20:18:44', 1),
+(3, 3, 'LOTE-003-2025', '2026-03-30', 200, 0, '2025-10-18 20:18:44', 1),
+(4, 4, 'LOTE-004-2025', '2026-03-30', 150, 132, '2025-10-18 20:18:44', 1),
 (5, 1, 'L-2025Z', '2026-05-11', 100, 200, '2025-11-12 05:34:20', 1),
 (6, 2, 'L-202510', '2026-06-12', 50, 100, '2025-11-12 17:44:59', 1),
-(7, 3, '256-l', '2026-06-19', 500, 1000, '2025-11-19 18:57:49', 1),
+(7, 3, '256-l', '2026-06-19', 500, 942, '2025-11-19 18:57:49', 1),
 (8, 1, 'LOTE-006-2025', '2026-05-24', 20, 41, '2025-11-24 19:49:53', 1),
 (9, 1, 'BL-202511-862', '2026-05-28', 100, 200, '2025-11-28 16:41:37', 1),
 (10, 2, 'VL-202512-366', '2026-06-02', 200, 400, '2025-12-02 19:16:33', 1);
@@ -406,7 +519,39 @@ INSERT INTO `movimiento_stock` (`id_movimiento`, `id_producto`, `tipo_movimiento
 (40, 3, 'egreso', 100, '2025-12-03 13:56:19', 'Venta #46 - Lote LOTE-003-2025', 6, 3),
 (41, 2, 'egreso', 1, '2025-12-05 04:49:17', 'Venta #47 - Lote LOTE-002-2025', 3, 2),
 (42, 2, 'egreso', 1, '2025-12-06 01:01:52', 'Venta #48 - Lote LOTE-002-2025', 3, 2),
-(43, 3, 'egreso', 5, '2025-12-06 02:19:13', 'Venta #49 - Lote LOTE-003-2025', 6, 3);
+(43, 3, 'egreso', 5, '2025-12-06 02:19:13', 'Venta #49 - Lote LOTE-003-2025', 6, 3),
+(44, 2, 'egreso', 1, '2025-12-17 03:54:28', 'Venta #50 - Lote LOTE-002-2025', 3, 2),
+(45, 4, 'egreso', 2, '2025-12-17 16:04:28', 'Venta #51 - Lote LOTE-004-2025', 3, 4),
+(46, 4, 'egreso', 2, '2025-12-17 16:07:08', 'Venta #52 - Lote LOTE-004-2025', 3, 4),
+(47, 3, 'egreso', 2, '2025-12-17 19:21:30', 'Venta #53 - Lote LOTE-003-2025', 3, 3),
+(48, 2, 'egreso', 1, '2025-12-17 20:04:17', 'Venta #54 - Lote LOTE-002-2025', 3, 2),
+(49, 3, 'egreso', 1, '2025-12-17 20:04:17', 'Venta #54 - Lote LOTE-003-2025', 3, 3),
+(50, 1, 'egreso', 3, '2025-12-18 05:31:50', 'Venta #55 - Lote LOTE-001-2025', 3, 1),
+(51, 3, 'egreso', 2, '2025-12-19 18:01:35', 'Venta #56 - Lote LOTE-003-2025', 3, 3),
+(52, 3, 'egreso', 1, '2025-12-21 03:28:02', 'Venta #57 - Lote LOTE-003-2025', 3, 3),
+(53, 3, 'egreso', 56, '2025-12-28 15:57:58', 'Venta #58 - Lote LOTE-003-2025', 3, 3),
+(54, 3, 'egreso', 44, '2025-12-28 15:57:58', 'Venta #58 - Lote 256-l', 3, 7),
+(55, 1, 'egreso', 1, '2025-12-28 18:02:09', 'Venta #59 - Lote LOTE-001-2025', 3, 1),
+(56, 2, 'egreso', 1, '2025-12-28 18:02:09', 'Venta #59 - Lote LOTE-002-2025', 3, 2),
+(57, 3, 'egreso', 5, '2025-12-28 18:02:09', 'Venta #59 - Lote 256-l', 3, 7),
+(58, 4, 'egreso', 2, '2025-12-28 18:02:09', 'Venta #59 - Lote LOTE-004-2025', 3, 4),
+(59, 1, 'egreso', 1, '2025-12-29 00:12:25', 'Venta #60 - Lote LOTE-001-2025', 3, 1),
+(60, 2, 'egreso', 1, '2025-12-29 00:12:25', 'Venta #60 - Lote LOTE-002-2025', 3, 2),
+(61, 3, 'egreso', 3, '2025-12-29 00:13:01', 'Venta #61 - Lote 256-l', 3, 7),
+(62, 4, 'egreso', 2, '2025-12-29 00:13:01', 'Venta #61 - Lote LOTE-004-2025', 3, 4),
+(63, 3, 'egreso', 1, '2025-12-29 00:13:48', 'Venta #62 - Lote 256-l', 3, 7),
+(64, 2, 'egreso', 2, '2025-12-29 00:13:48', 'Venta #62 - Lote LOTE-002-2025', 3, 2),
+(65, 1, 'egreso', 1, '2025-12-29 17:17:25', 'Venta #63 - Lote LOTE-001-2025', 3, 1),
+(66, 3, 'egreso', 4, '2025-12-29 17:18:44', 'Venta #64 - Lote 256-l', 3, 7),
+(67, 4, 'egreso', 4, '2025-12-29 17:19:10', 'Venta #65 - Lote LOTE-004-2025', 3, 4),
+(68, 1, 'egreso', 3, '2025-12-29 17:19:37', 'Venta #66 - Lote LOTE-001-2025', 3, 1),
+(69, 4, 'egreso', 3, '2025-12-29 17:20:06', 'Venta #67 - Lote LOTE-004-2025', 3, 4),
+(70, 4, 'egreso', 2, '2025-12-29 17:20:29', 'Venta #68 - Lote LOTE-004-2025', 3, 4),
+(71, 1, 'egreso', 1, '2025-12-30 15:41:16', 'Venta #69 - Lote LOTE-001-2025', 3, 1),
+(72, 1, 'egreso', 1, '2025-12-30 18:15:04', 'Venta #70 - Lote LOTE-001-2025', 3, 1),
+(73, 2, 'egreso', 1, '2025-12-30 18:24:32', 'Venta #71 - Lote LOTE-002-2025', 3, 2),
+(74, 4, 'egreso', 1, '2025-12-30 18:28:17', 'Venta #72 - Lote LOTE-004-2025', 3, 4),
+(75, 3, 'egreso', 1, '2025-12-30 18:31:12', 'Venta #73 - Lote 256-l', 3, 7);
 
 -- --------------------------------------------------------
 
@@ -539,7 +684,8 @@ INSERT INTO `persona` (`id_persona`, `tipo_documento`, `numero_documento`, `nomb
 (29, 'DNI', '42288795', 'raul portugal padilla', '930613571', 'urb. imosa mz.A lt.9', NULL, 1, '2025-11-19 18:13:02'),
 (30, 'RUC', '203992828922', 'Agua Manantial S.A.C', '989392892', 'jr.macisea', NULL, 1, '2025-11-19 18:42:45'),
 (31, 'NO_ESPECIFICADO', 'TEMP-1763941724191-q', 'miguel angel', '934734256', 'Hospital II Ramón Castilla', NULL, 1, '2025-11-23 23:48:44'),
-(32, 'RUC', '203330209223', 'Agua Manantial pucallpa', '983923432', 'jr.centenario 504', NULL, 1, '2025-11-24 19:41:15');
+(32, 'RUC', '203330209223', 'Agua Manantial pucallpa', '983923432', 'jr.centenario 504', NULL, 1, '2025-11-24 19:41:15'),
+(33, 'DNI', '72235341', 'Miguel Angel Velazques Rosas', '939702033', 'Jr.Los cedros mz.A lt.3', NULL, 1, '2025-12-28 15:57:15');
 
 -- --------------------------------------------------------
 
@@ -569,10 +715,10 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `nombre`, `id_categoria`, `id_marca`, `presentacion`, `volumen`, `precio`, `stock`, `stock_minimo`, `id_proveedor`, `id_pais_origen`, `descripcion`, `activo`, `fecha_creacion`) VALUES
-(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 353, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
-(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 632, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
-(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 1138, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
-(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 548, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
+(1, 'Bidón Agua Bella', 1, 1, 'Bidón', '20L', 4.00, 342, 20, 1, 1, 'Agua purificada en práctico bidón, ideal para el consumo diario y mantener una hidratación saludable.', 1, '2025-10-18 20:18:44'),
+(2, 'Bidón Agua Viña', 1, 2, 'Bidón', '20L', 4.50, 625, 15, 1, 1, 'Agua natural de excelente pureza en bidón, perfecta para el hogar o la oficina.', 1, '2025-10-18 20:18:44'),
+(3, 'Paquete de Botella Agua Bella', 2, 1, 'Botella PET', '650ml', 6.00, 1018, 50, 1, 1, 'Pack de botellas de agua pura y ligera, ideal para llevar a cualquier lugar.', 1, '2025-10-18 20:18:44'),
+(4, 'Paquete de Botella Agua Viña', 2, 2, 'Botella PET', '600ml', 7.50, 530, 30, 1, 1, 'Pack de agua natural en botellas individuales, refrescante y de gran calidad.', 1, '2025-10-18 20:18:44');
 
 -- --------------------------------------------------------
 
@@ -668,6 +814,34 @@ INSERT INTO `rol` (`id_rol`, `rol`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `sistema_bitacora`
+--
+
+CREATE TABLE `sistema_bitacora` (
+  `id_bitacora` int(11) NOT NULL,
+  `modulo` varchar(50) NOT NULL,
+  `accion` varchar(50) NOT NULL,
+  `descripcion` text NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `id_referencia` int(11) DEFAULT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `ip_origen` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `sistema_bitacora`
+--
+
+INSERT INTO `sistema_bitacora` (`id_bitacora`, `modulo`, `accion`, `descripcion`, `id_usuario`, `id_referencia`, `fecha_registro`, `ip_origen`, `user_agent`) VALUES
+(1, 'entregas_dinero', 'registro', 'Repartidor Juan Pérez entregó S/ 600 (efectivo)', 8, 1, '2025-12-28 20:45:45', NULL, NULL),
+(2, 'entregas_dinero', 'registro', 'Repartidor Carlos López entregó S/ 53.5 (efectivo)', 10, 2, '2025-12-28 22:03:19', NULL, NULL),
+(3, 'entregas_dinero', 'registro', 'Repartidor Juan Pérez entregó S/ 1110.5 (efectivo)', 8, 4, '2025-12-29 01:39:32', NULL, NULL),
+(4, 'entregas_dinero', 'registro', 'Repartidor Juan Pérez entregó S/ 1110.5 (efectivo)', 8, 5, '2025-12-29 01:40:22', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `sunat_configuracion`
 --
 
@@ -739,9 +913,10 @@ INSERT INTO `usuario` (`id_usuario`, `nombre_usuario`, `email`, `password`, `id_
 (3, 'admin', 'admin@sistemaagua.com', '$2b$10$/0flwtx54/nkPXRbYEiOA.0uijO7K/bIq/osaG8HScJkFbek/UNf.', 1, 6, 1, '2025-10-21 01:38:47', '2025-11-19 13:44:04'),
 (5, 'rodre', 'rrodrigomzls@gmail.com', '$2b$10$kvuSSdCSEu/pnm4dqUt.aev2dKK0pcUsreHNtoPWNGtP.lqSN9oNG', 2, 10, 1, '2025-10-23 03:42:18', '2025-10-28 14:40:00'),
 (6, 'Paolo', 'cesarfumachi2002@gmail.com', '$2b$10$8veD/rOo2O8OUiAV2ZzcA.qRWXS2SehRvgTARvH5gs8h4.ASVN8Jy', 2, 13, 1, '2025-10-28 03:36:35', '2025-12-03 13:55:24'),
-(8, 'Juan', 'juan@gmail.com', '$2b$10$32yxolacpgqblM0RaiSF9OYyyz3L7SjhFjZ19gt1Xw5FRZlwxiLlC', 3, 1, 1, '2025-10-31 21:23:33', '2025-11-19 13:45:02'),
-(9, 'Leydi', 'Leydi@gmail.com', '$2b$10$8uS6I.jkM.85lfAh9cBh2Ox5OCqPCeTFIk4kFBaTz3esW9ve8XOXC', 4, 16, 1, '2025-11-06 14:57:55', '2025-11-26 01:05:06'),
-(10, 'Carlos', 'Carlos2023@gmail.com', '$2b$10$xAXh8WHUmNYldm42u8id.ulJsDrofTaVkcdFox4R7lMoi9iz1ZUfq', 3, 3, 1, '2025-11-24 00:56:20', '2025-11-24 00:56:20');
+(8, 'Juan', 'juan@gmail.com', '$2b$10$32yxolacpgqblM0RaiSF9OYyyz3L7SjhFjZ19gt1Xw5FRZlwxiLlC', 3, 1, 1, '2025-10-31 21:23:33', '2025-12-23 17:21:39'),
+(9, 'Leydi', 'Leydi@gmail.com', '$2b$10$MGGDaEKFnDHAREhlRpXg8uLDp142golIU3vf6zaPA4idL2ZVktyFG', 4, 16, 1, '2025-11-06 14:57:55', '2025-12-23 16:52:41'),
+(10, 'Carlos', 'Carlos2023@gmail.com', '$2b$10$xAXh8WHUmNYldm42u8id.ulJsDrofTaVkcdFox4R7lMoi9iz1ZUfq', 3, 3, 1, '2025-11-24 00:56:20', '2025-11-24 00:56:20'),
+(11, 'Maria', 'maria34suta@gmail.com', '$2b$10$J63Ut0EIWZMAMeZeTEdII.K0YzqQm6WE1AbJ5GO55v4K/5CMJdie6', 3, 2, 1, '2025-12-17 14:35:43', '2025-12-17 14:35:43');
 
 -- --------------------------------------------------------
 
@@ -766,49 +941,74 @@ CREATE TABLE `venta` (
   `fecha_fin_ruta` datetime DEFAULT NULL,
   `ubicacion_inicio_ruta` varchar(255) DEFAULT NULL,
   `tracking_activo` tinyint(1) DEFAULT 0,
-  `comprobante_emitido` tinyint(1) DEFAULT 0
+  `comprobante_emitido` tinyint(1) DEFAULT 0,
+  `tipo_comprobante_solicitado` varchar(20) DEFAULT NULL COMMENT 'FACTURA, BOLETA, SIN_COMPROBANTE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `venta`
 --
 
-INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`, `fecha_inicio_ruta`, `fecha_fin_ruta`, `ubicacion_inicio_ruta`, `tracking_activo`, `comprobante_emitido`) VALUES
-(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-12-16 03:44:25', NULL, NULL, NULL, 0, 1),
-(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25', NULL, NULL, NULL, 0, 0),
-(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 7, 1, 3, '', '2025-10-22 03:52:17', '2025-11-08 21:19:37', NULL, NULL, NULL, 0, 0),
-(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41', NULL, NULL, NULL, 0, 0),
-(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 7, 1, 5, '', '2025-11-01 21:41:52', '2025-11-08 21:19:45', NULL, NULL, NULL, 0, 0),
-(7, 6, '2025-11-01', '16:46:29', 4.00, 1, 5, 3, 5, '', '2025-11-01 21:46:29', '2025-11-01 21:51:47', NULL, NULL, NULL, 0, 0),
-(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12', NULL, NULL, NULL, 0, 0),
-(9, 3, '2025-11-09', '16:13:58', 13.50, 1, 8, 1, 3, '', '2025-11-09 21:13:58', '2025-11-09 21:17:36', NULL, NULL, NULL, 0, 0),
-(10, 3, '2025-11-09', '16:22:15', 22.00, 1, 7, 1, 5, '', '2025-11-09 21:22:15', '2025-11-22 05:38:39', '2025-11-22 00:35:43', NULL, '-8.404992,-74.5439232', 1, 0),
-(11, 3, '2025-11-09', '16:39:24', 8.00, 1, 8, 1, 5, ' CANCELACIÓN REPARTIDOR: no se encuentra en domicilio', '2025-11-09 21:39:24', '2025-11-09 21:45:45', NULL, NULL, NULL, 0, 0),
-(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 7, 1, 5, '', '2025-11-09 22:14:48', '2025-11-22 06:12:40', '2025-11-22 00:51:43', '2025-11-22 01:12:40', '-8.404992,-74.5439232', 0, 0),
-(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 7, 1, 5, '', '2025-11-09 22:17:07', '2025-11-22 16:05:00', '2025-11-22 09:04:15', '2025-11-22 11:05:00', '-8.404992,-74.5439232', 0, 0),
-(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 7, 1, 3, '', '2025-11-10 16:25:35', '2025-11-12 17:23:52', NULL, NULL, NULL, 0, 0),
-(28, 1, '2025-11-12', '15:58:44', 4.00, 1, 7, 1, 3, NULL, '2025-11-12 20:58:44', '2025-11-22 21:31:03', '2025-11-22 15:30:48', '2025-11-22 16:31:03', '-8.404992,-74.5439232', 0, 0),
-(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 7, 1, 3, NULL, '2025-11-13 14:26:03', '2025-11-22 20:15:50', '2025-11-22 15:02:30', '2025-11-22 15:15:50', '-8.404992,-74.5439232', 0, 0),
-(30, 11, '2025-11-17', '15:57:25', 4.00, 1, 7, 1, 3, NULL, '2025-11-17 20:57:25', '2025-11-22 18:50:28', NULL, NULL, NULL, 0, 0),
-(31, 13, '2025-11-19', '12:53:16', 60.00, 1, 7, 1, 3, NULL, '2025-11-19 17:53:16', '2025-11-19 17:56:43', NULL, NULL, NULL, 0, 0),
-(32, 14, '2025-11-19', '13:13:41', 4.00, 1, 7, 1, 3, NULL, '2025-11-19 18:13:41', '2025-11-19 18:30:46', NULL, NULL, NULL, 0, 0),
-(33, 1, '2025-11-19', '13:17:41', 6.00, 1, 7, 1, 3, NULL, '2025-11-19 18:17:41', '2025-11-22 18:37:31', '2025-11-22 13:14:53', '2025-11-22 13:37:31', '-8.404992,-74.5439232', 0, 0),
-(34, 11, '2025-11-23', '13:26:24', 30.00, 1, 7, 1, 6, NULL, '2025-11-23 18:26:24', '2025-11-23 19:08:16', '2025-11-23 13:59:45', '2025-11-23 14:08:16', NULL, 0, 0),
-(35, 7, '2025-11-23', '14:08:42', 24.00, 2, 7, 1, 6, NULL, '2025-11-23 19:08:42', '2025-11-26 05:15:35', '2025-11-23 14:09:04', '2025-11-26 00:15:35', '-8.4059961,-74.5814659', 0, 0),
-(36, 3, '2025-11-23', '14:57:21', 4.00, 1, 7, 1, 6, NULL, '2025-11-23 19:57:21', '2025-12-02 19:20:13', '2025-11-23 14:57:45', '2025-12-02 14:20:13', '-8.4059961,-74.5814659', 0, 0),
-(37, 10, '2025-11-23', '15:40:38', 6.00, 1, 7, 1, 6, NULL, '2025-11-23 20:40:38', '2025-11-24 20:02:26', '2025-11-23 15:41:07', '2025-11-24 15:02:26', '-8.4059961,-74.5814659', 0, 0),
-(38, 3, '2025-11-23', '17:43:23', 4.50, 1, 7, 1, 6, NULL, '2025-11-23 22:43:23', '2025-11-23 22:46:55', '2025-11-23 17:43:52', '2025-11-23 17:46:55', '-12.075008,-77.021184', 0, 0),
-(39, 3, '2025-11-23', '17:50:23', 6.00, 1, 7, 1, 6, NULL, '2025-11-23 22:50:23', '2025-12-14 21:13:52', '2025-11-23 17:58:57', '2025-11-23 18:00:39', '-8.3881305,-74.5668224', 0, 1),
-(40, 1, '2025-11-23', '18:07:04', 9.00, 2, 5, 1, 6, NULL, '2025-11-23 23:07:04', '2025-11-23 23:50:37', NULL, NULL, NULL, 0, 0),
-(41, 15, '2025-11-23', '18:49:52', 12.00, 2, 5, 1, 6, NULL, '2025-11-23 23:49:52', '2025-12-13 02:10:32', '2025-12-12 21:10:07', NULL, '-12.075008,-77.021184', 1, 0),
-(42, 8, '2025-11-23', '19:49:14', 6.00, 1, 5, 3, 6, NULL, '2025-11-24 00:49:14', '2025-11-24 00:49:30', NULL, NULL, NULL, 0, 0),
-(43, 12, '2025-11-23', '19:50:31', 8.00, 2, 7, 3, 6, NULL, '2025-11-24 00:50:31', '2025-12-16 03:10:24', '2025-11-23 19:57:53', '2025-12-10 21:53:03', '-12.075008,-77.021184', 0, 1),
-(44, 3, '2025-11-24', '14:31:24', 12.00, 2, 7, 1, 6, NULL, '2025-11-24 19:31:24', '2025-12-16 03:04:55', '2025-11-24 14:33:20', '2025-11-24 14:35:49', '-8.3918551,-74.5538237', 0, 1),
-(45, 15, '2025-12-02', '14:20:53', 24.00, 1, 5, 3, 6, NULL, '2025-12-02 19:20:53', '2025-12-02 19:21:10', NULL, NULL, NULL, 0, 0),
-(46, 12, '2025-12-03', '08:56:19', 600.00, 1, 7, 1, 6, NULL, '2025-12-03 13:56:19', '2025-12-03 14:01:32', '2025-12-03 09:00:14', '2025-12-03 09:01:32', '-12.075008,-77.0244608', 0, 0),
-(47, 11, '2025-12-04', '23:49:17', 4.50, 1, 5, 3, 3, NULL, '2025-12-05 04:49:17', '2025-12-05 04:49:31', NULL, NULL, NULL, 0, 0),
-(48, 1, '2025-12-05', '20:01:52', 4.50, 1, 5, 3, 3, NULL, '2025-12-06 01:01:52', '2025-12-06 01:02:25', NULL, NULL, NULL, 0, 0),
-(49, 7, '2025-12-05', '21:19:13', 30.00, 1, 7, 1, 6, NULL, '2025-12-06 02:19:13', '2025-12-06 02:21:12', '2025-12-05 21:20:01', '2025-12-05 21:21:12', '-8.391052,-74.5701546', 0, 0);
+INSERT INTO `venta` (`id_venta`, `id_cliente`, `fecha`, `hora`, `total`, `id_metodo_pago`, `id_estado_venta`, `id_repartidor`, `id_vendedor`, `notas`, `fecha_creacion`, `fecha_actualizacion`, `fecha_inicio_ruta`, `fecha_fin_ruta`, `ubicacion_inicio_ruta`, `tracking_activo`, `comprobante_emitido`, `tipo_comprobante_solicitado`) VALUES
+(2, 3, '2025-10-21', '10:20:05', 8.50, 1, 7, NULL, 3, 'Se vendio un bidon de agua.', '2025-10-21 15:20:05', '2025-12-16 03:44:25', NULL, NULL, NULL, 0, 1, NULL),
+(3, 1, '2025-10-21', '15:38:08', 17.00, 1, 7, 1, 3, 'hsghad', '2025-10-21 20:38:08', '2025-11-03 19:59:25', NULL, NULL, NULL, 0, 0, NULL),
+(4, 1, '2025-10-21', '22:52:17', 8.50, 1, 7, 1, 3, '', '2025-10-22 03:52:17', '2025-11-08 21:19:37', NULL, NULL, NULL, 0, 0, NULL),
+(5, 4, '2025-10-22', '23:37:32', 8.00, 2, 7, 1, 3, '', '2025-10-23 04:37:32', '2025-11-08 21:19:41', NULL, NULL, NULL, 0, 0, NULL),
+(6, 2, '2025-11-01', '16:41:52', 60.00, 1, 7, 1, 5, '', '2025-11-01 21:41:52', '2025-11-08 21:19:45', NULL, NULL, NULL, 0, 0, NULL),
+(7, 6, '2025-11-01', '16:46:29', 4.00, 1, 8, 3, 5, ' CANCELACIÓN REPARTIDOR: 🚚 Problema con el vehículo de reparto', '2025-11-01 21:46:29', '2025-12-17 20:06:54', '2025-12-17 15:05:58', '2025-12-17 15:06:54', '-8.385828,-74.5587662', 0, 0, NULL),
+(8, 3, '2025-11-03', '13:28:51', 18.00, 1, 8, 3, 6, '', '2025-11-03 18:28:51', '2025-11-03 18:32:12', NULL, NULL, NULL, 0, 0, NULL),
+(9, 3, '2025-11-09', '16:13:58', 13.50, 1, 8, 1, 3, '', '2025-11-09 21:13:58', '2025-11-09 21:17:36', NULL, NULL, NULL, 0, 0, NULL),
+(10, 3, '2025-11-09', '16:22:15', 22.00, 1, 7, 1, 5, '', '2025-11-09 21:22:15', '2025-11-22 05:38:39', '2025-11-22 00:35:43', NULL, '-8.404992,-74.5439232', 1, 0, NULL),
+(11, 3, '2025-11-09', '16:39:24', 8.00, 1, 8, 1, 5, ' CANCELACIÓN REPARTIDOR: no se encuentra en domicilio', '2025-11-09 21:39:24', '2025-11-09 21:45:45', NULL, NULL, NULL, 0, 0, NULL),
+(12, 6, '2025-11-09', '17:14:48', 24.00, 1, 7, 1, 5, '', '2025-11-09 22:14:48', '2025-11-22 06:12:40', '2025-11-22 00:51:43', '2025-11-22 01:12:40', '-8.404992,-74.5439232', 0, 0, NULL),
+(13, 3, '2025-11-09', '17:17:07', 18.00, 1, 7, 1, 5, '', '2025-11-09 22:17:07', '2025-11-22 16:05:00', '2025-11-22 09:04:15', '2025-11-22 11:05:00', '-8.404992,-74.5439232', 0, 0, NULL),
+(14, 11, '2025-11-10', '11:25:35', 51.00, 1, 7, 1, 3, '', '2025-11-10 16:25:35', '2025-11-12 17:23:52', NULL, NULL, NULL, 0, 0, NULL),
+(28, 1, '2025-11-12', '15:58:44', 4.00, 1, 7, 1, 3, NULL, '2025-11-12 20:58:44', '2025-11-22 21:31:03', '2025-11-22 15:30:48', '2025-11-22 16:31:03', '-8.404992,-74.5439232', 0, 0, NULL),
+(29, 12, '2025-11-13', '09:26:03', 24.00, 1, 7, 1, 3, NULL, '2025-11-13 14:26:03', '2025-11-22 20:15:50', '2025-11-22 15:02:30', '2025-11-22 15:15:50', '-8.404992,-74.5439232', 0, 0, NULL),
+(30, 11, '2025-11-17', '15:57:25', 4.00, 1, 7, 1, 3, NULL, '2025-11-17 20:57:25', '2025-11-22 18:50:28', NULL, NULL, NULL, 0, 0, NULL),
+(31, 13, '2025-11-19', '12:53:16', 60.00, 1, 7, 1, 3, NULL, '2025-11-19 17:53:16', '2025-11-19 17:56:43', NULL, NULL, NULL, 0, 0, NULL),
+(32, 14, '2025-11-19', '13:13:41', 4.00, 1, 7, 1, 3, NULL, '2025-11-19 18:13:41', '2025-11-19 18:30:46', NULL, NULL, NULL, 0, 0, NULL),
+(33, 1, '2025-11-19', '13:17:41', 6.00, 1, 7, 1, 3, NULL, '2025-11-19 18:17:41', '2025-11-22 18:37:31', '2025-11-22 13:14:53', '2025-11-22 13:37:31', '-8.404992,-74.5439232', 0, 0, NULL),
+(34, 11, '2025-11-23', '13:26:24', 30.00, 1, 7, 1, 6, NULL, '2025-11-23 18:26:24', '2025-11-23 19:08:16', '2025-11-23 13:59:45', '2025-11-23 14:08:16', NULL, 0, 0, NULL),
+(35, 7, '2025-11-23', '14:08:42', 24.00, 2, 7, 1, 6, NULL, '2025-11-23 19:08:42', '2025-11-26 05:15:35', '2025-11-23 14:09:04', '2025-11-26 00:15:35', '-8.4059961,-74.5814659', 0, 0, NULL),
+(36, 3, '2025-11-23', '14:57:21', 4.00, 1, 7, 1, 6, NULL, '2025-11-23 19:57:21', '2025-12-02 19:20:13', '2025-11-23 14:57:45', '2025-12-02 14:20:13', '-8.4059961,-74.5814659', 0, 0, NULL),
+(37, 10, '2025-11-23', '15:40:38', 6.00, 1, 7, 1, 6, NULL, '2025-11-23 20:40:38', '2025-11-24 20:02:26', '2025-11-23 15:41:07', '2025-11-24 15:02:26', '-8.4059961,-74.5814659', 0, 0, NULL),
+(38, 3, '2025-11-23', '17:43:23', 4.50, 1, 7, 1, 6, NULL, '2025-11-23 22:43:23', '2025-11-23 22:46:55', '2025-11-23 17:43:52', '2025-11-23 17:46:55', '-12.075008,-77.021184', 0, 0, NULL),
+(39, 3, '2025-11-23', '17:50:23', 6.00, 1, 7, 1, 6, NULL, '2025-11-23 22:50:23', '2025-12-14 21:13:52', '2025-11-23 17:58:57', '2025-11-23 18:00:39', '-8.3881305,-74.5668224', 0, 1, NULL),
+(40, 1, '2025-11-23', '18:07:04', 9.00, 2, 8, 1, 6, ' CANCELACIÓN REPARTIDOR: 👤 Cliente no disponible en la dirección', '2025-11-23 23:07:04', '2025-12-17 16:06:17', NULL, NULL, NULL, 0, 0, NULL),
+(41, 15, '2025-11-23', '18:49:52', 12.00, 2, 8, 1, 6, ' CANCELACIÓN REPARTIDOR: 👤 Cliente no disponible en la dirección', '2025-11-23 23:49:52', '2025-12-17 16:06:00', '2025-12-12 21:10:07', '2025-12-17 11:06:00', '-12.075008,-77.021184', 0, 0, NULL),
+(42, 8, '2025-11-23', '19:49:14', 6.00, 1, 7, 3, 6, NULL, '2025-11-24 00:49:14', '2025-12-21 03:32:39', '2025-12-20 22:30:04', '2025-12-20 22:32:39', '-8.385828,-74.5587662', 0, 0, NULL),
+(43, 12, '2025-11-23', '19:50:31', 8.00, 2, 7, 3, 6, NULL, '2025-11-24 00:50:31', '2025-12-16 03:10:24', '2025-11-23 19:57:53', '2025-12-10 21:53:03', '-12.075008,-77.021184', 0, 1, NULL),
+(44, 3, '2025-11-24', '14:31:24', 12.00, 2, 7, 1, 6, NULL, '2025-11-24 19:31:24', '2025-12-16 03:04:55', '2025-11-24 14:33:20', '2025-11-24 14:35:49', '-8.3918551,-74.5538237', 0, 1, NULL),
+(45, 15, '2025-12-02', '14:20:53', 24.00, 1, 8, 3, 6, ' CANCELACIÓN REPARTIDOR: ⚠️ Zona insegura para la entrega', '2025-12-02 19:20:53', '2025-12-21 03:31:55', NULL, NULL, NULL, 0, 0, NULL),
+(46, 12, '2025-12-03', '08:56:19', 600.00, 1, 7, 1, 6, NULL, '2025-12-03 13:56:19', '2025-12-03 14:01:32', '2025-12-03 09:00:14', '2025-12-03 09:01:32', '-12.075008,-77.0244608', 0, 0, NULL),
+(47, 11, '2025-12-04', '23:49:17', 4.50, 1, 8, 3, 3, ' CANCELACIÓN REPARTIDOR: 🚚 Problema con el vehículo de reparto', '2025-12-05 04:49:17', '2025-12-21 03:32:25', NULL, NULL, NULL, 0, 0, NULL),
+(48, 1, '2025-12-05', '20:01:52', 4.50, 1, 8, 3, 3, ' CANCELACIÓN REPARTIDOR: 📍 Dirección incorrecta o inexistente', '2025-12-06 01:01:52', '2025-12-21 03:32:05', NULL, NULL, NULL, 0, 0, NULL),
+(49, 7, '2025-12-05', '21:19:13', 30.00, 1, 7, 1, 6, NULL, '2025-12-06 02:19:13', '2025-12-06 02:21:12', '2025-12-05 21:20:01', '2025-12-05 21:21:12', '-8.391052,-74.5701546', 0, 0, NULL),
+(50, 1, '2025-12-16', '22:54:28', 4.50, 1, 7, 2, 3, NULL, '2025-12-17 03:54:28', '2025-12-17 14:50:32', '2025-12-17 09:35:55', '2025-12-17 09:49:54', '-8.385828,-74.5587662', 0, 1, NULL),
+(51, 12, '2025-12-17', '11:04:28', 15.00, 1, 8, 1, 3, ' CANCELACIÓN REPARTIDOR: 👤 Cliente no disponible en la dirección', '2025-12-17 16:04:28', '2025-12-17 16:06:11', NULL, NULL, NULL, 0, 0, NULL),
+(52, 12, '2025-12-17', '11:07:08', 15.00, 1, 7, 1, 3, NULL, '2025-12-17 16:07:08', '2025-12-17 16:09:13', '2025-12-17 11:07:25', '2025-12-17 11:08:38', '-8.385828,-74.5587662', 0, 1, NULL),
+(53, 10, '2025-12-17', '14:21:30', 12.00, 1, 7, 3, 3, NULL, '2025-12-17 19:21:30', '2025-12-17 19:48:02', '2025-12-17 14:43:58', '2025-12-17 14:47:02', '-8.385828,-74.5587662', 0, 1, 'BOLETA'),
+(54, 1, '2025-12-17', '15:04:17', 10.50, 1, 8, 3, 3, ' CANCELACIÓN REPARTIDOR: ⏰ Horario de entrega inconveniente', '2025-12-17 20:04:17', '2025-12-21 03:32:16', NULL, NULL, NULL, 0, 0, 'SIN_COMPROBANTE'),
+(55, 1, '2025-12-18', '00:31:50', 12.00, 1, 7, 1, 3, NULL, '2025-12-18 05:31:50', '2025-12-22 13:46:24', '2025-12-18 11:45:35', '2025-12-22 08:46:24', '-8.385828,-74.5587662', 0, 0, 'BOLETA'),
+(56, 3, '2025-12-19', '13:01:35', 12.00, 2, 7, 3, 3, NULL, '2025-12-19 18:01:35', '2025-12-19 18:07:20', '2025-12-19 13:03:19', '2025-12-19 13:07:05', '-12.075008,-77.021184', 0, 1, 'BOLETA'),
+(57, 10, '2025-12-20', '22:28:02', 6.00, 1, 7, 2, 3, NULL, '2025-12-21 03:28:02', '2025-12-29 00:05:39', '2025-12-20 22:34:53', '2025-12-28 19:05:39', '-8.385828,-74.5587662', 0, 0, 'BOLETA'),
+(58, 16, '2025-12-28', '10:57:58', 600.00, 1, 7, 1, 3, NULL, '2025-12-28 15:57:58', '2025-12-28 18:03:02', '2025-12-28 11:01:49', '2025-12-28 13:03:02', '-8.3990359,-74.5698964', 0, 0, 'FACTURA'),
+(59, 7, '2025-12-28', '13:02:09', 53.50, 1, 7, 3, 3, NULL, '2025-12-28 18:02:09', '2025-12-28 18:13:58', '2025-12-28 13:04:23', '2025-12-28 13:11:59', '-8.404992,-74.5340928', 0, 1, 'BOLETA'),
+(60, 1, '2025-12-28', '19:12:25', 8.50, 2, 7, 1, 3, NULL, '2025-12-29 00:12:25', '2025-12-29 00:18:39', '2025-12-28 19:14:30', '2025-12-28 19:18:39', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(61, 3, '2025-12-28', '19:13:01', 33.00, 1, 7, 1, 3, NULL, '2025-12-29 00:13:01', '2025-12-29 00:18:42', '2025-12-28 19:16:20', '2025-12-28 19:18:42', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(62, 8, '2025-12-28', '19:13:48', 15.00, 1, 7, 1, 3, NULL, '2025-12-29 00:13:48', '2025-12-29 00:18:45', '2025-12-28 19:16:59', '2025-12-28 19:18:45', '-8.404992,-74.5340928', 0, 0, 'FACTURA'),
+(63, 7, '2025-12-29', '12:17:25', 4.00, 1, 7, 3, 3, NULL, '2025-12-29 17:17:25', '2025-12-29 17:26:39', '2025-12-29 12:22:59', '2025-12-29 12:26:39', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(64, 1, '2025-12-29', '12:18:44', 24.00, 2, 7, 2, 3, NULL, '2025-12-29 17:18:44', '2025-12-29 17:27:43', '2025-12-29 12:21:59', '2025-12-29 12:27:43', '-8.404992,-74.5340928', 0, 0, 'SIN_COMPROBANTE'),
+(65, 3, '2025-12-29', '12:19:10', 30.00, 1, 7, 2, 3, NULL, '2025-12-29 17:19:10', '2025-12-29 17:27:46', '2025-12-29 12:23:27', '2025-12-29 12:27:46', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(66, 10, '2025-12-29', '12:19:37', 12.00, 2, 7, 3, 3, NULL, '2025-12-29 17:19:37', '2025-12-29 17:26:45', '2025-12-29 12:23:05', '2025-12-29 12:26:45', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(67, 12, '2025-12-29', '12:20:06', 22.50, 2, 7, 1, 3, NULL, '2025-12-29 17:20:06', '2025-12-29 18:27:53', '2025-12-29 12:21:35', '2025-12-29 13:27:53', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(68, 3, '2025-12-29', '12:20:29', 15.00, 2, 7, 1, 3, NULL, '2025-12-29 17:20:29', '2025-12-29 18:28:05', '2025-12-29 12:22:34', '2025-12-29 13:28:05', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(69, 1, '2025-12-30', '10:41:16', 4.00, 2, 7, 1, 3, NULL, '2025-12-30 15:41:16', '2025-12-30 16:43:29', '2025-12-30 11:41:04', '2025-12-30 11:43:29', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(70, 7, '2025-12-30', '13:15:04', 4.00, 2, 7, 3, 3, NULL, '2025-12-30 18:15:04', '2025-12-30 18:22:41', '2025-12-30 13:15:25', '2025-12-30 13:22:41', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(71, 11, '2025-12-30', '13:24:32', 4.50, 1, 7, 2, 3, NULL, '2025-12-30 18:24:32', '2025-12-30 18:27:23', '2025-12-30 13:25:09', '2025-12-30 13:27:23', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(72, 8, '2025-12-30', '13:28:17', 7.50, 3, 7, 2, 3, NULL, '2025-12-30 18:28:17', '2025-12-30 18:29:58', '2025-12-30 13:28:41', '2025-12-30 13:29:58', '-8.404992,-74.5340928', 0, 0, 'BOLETA'),
+(73, 12, '2025-12-30', '13:31:12', 6.00, 4, 7, 3, 3, NULL, '2025-12-30 18:31:12', '2025-12-30 18:33:34', '2025-12-30 13:31:27', '2025-12-30 13:33:34', '-8.404992,-74.5340928', 0, 0, 'BOLETA');
 
 -- --------------------------------------------------------
 
@@ -867,7 +1067,38 @@ INSERT INTO `venta_detalle` (`id_detalle`, `id_venta`, `id_producto`, `cantidad`
 (35, 46, 3, 100, 6.00),
 (36, 47, 2, 1, 4.50),
 (37, 48, 2, 1, 4.50),
-(38, 49, 3, 5, 6.00);
+(38, 49, 3, 5, 6.00),
+(39, 50, 2, 1, 4.50),
+(40, 51, 4, 2, 7.50),
+(41, 52, 4, 2, 7.50),
+(42, 53, 3, 2, 6.00),
+(43, 54, 2, 1, 4.50),
+(44, 54, 3, 1, 6.00),
+(45, 55, 1, 3, 4.00),
+(46, 56, 3, 2, 6.00),
+(47, 57, 3, 1, 6.00),
+(48, 58, 3, 100, 6.00),
+(49, 59, 1, 1, 4.00),
+(50, 59, 2, 1, 4.50),
+(51, 59, 3, 5, 6.00),
+(52, 59, 4, 2, 7.50),
+(53, 60, 1, 1, 4.00),
+(54, 60, 2, 1, 4.50),
+(55, 61, 3, 3, 6.00),
+(56, 61, 4, 2, 7.50),
+(57, 62, 3, 1, 6.00),
+(58, 62, 2, 2, 4.50),
+(59, 63, 1, 1, 4.00),
+(60, 64, 3, 4, 6.00),
+(61, 65, 4, 4, 7.50),
+(62, 66, 1, 3, 4.00),
+(63, 67, 4, 3, 7.50),
+(64, 68, 4, 2, 7.50),
+(65, 69, 1, 1, 4.00),
+(66, 70, 1, 1, 4.00),
+(67, 71, 2, 1, 4.50),
+(68, 72, 4, 1, 7.50),
+(69, 73, 3, 1, 6.00);
 
 -- --------------------------------------------------------
 
@@ -909,7 +1140,39 @@ INSERT INTO `venta_detalle_lote` (`id_venta_detalle_lote`, `id_detalle_venta`, `
 (20, 35, 3, 100),
 (21, 36, 2, 1),
 (22, 37, 2, 1),
-(23, 38, 3, 5);
+(23, 38, 3, 5),
+(24, 39, 2, 1),
+(25, 40, 4, 2),
+(26, 41, 4, 2),
+(27, 42, 3, 2),
+(28, 43, 2, 1),
+(29, 44, 3, 1),
+(30, 45, 1, 3),
+(31, 46, 3, 2),
+(32, 47, 3, 1),
+(33, 48, 3, 56),
+(34, 48, 7, 44),
+(35, 49, 1, 1),
+(36, 50, 2, 1),
+(37, 51, 7, 5),
+(38, 52, 4, 2),
+(39, 53, 1, 1),
+(40, 54, 2, 1),
+(41, 55, 7, 3),
+(42, 56, 4, 2),
+(43, 57, 7, 1),
+(44, 58, 2, 2),
+(45, 59, 1, 1),
+(46, 60, 7, 4),
+(47, 61, 4, 4),
+(48, 62, 1, 3),
+(49, 63, 4, 3),
+(50, 64, 4, 2),
+(51, 65, 1, 1),
+(52, 66, 1, 1),
+(53, 67, 2, 1),
+(54, 68, 4, 1),
+(55, 69, 7, 1);
 
 -- --------------------------------------------------------
 
@@ -948,6 +1211,37 @@ CREATE TABLE `vw_comprobantes_resumen` (
 -- --------------------------------------------------------
 
 --
+-- Estructura Stand-in para la vista `vw_resumen_entregas_diario`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_resumen_entregas_diario` (
+`fecha` date
+,`id_repartidor` int(11)
+,`repartidor` varchar(200)
+,`entregas_dia` bigint(21)
+,`total_dia` decimal(32,2)
+,`metodos_utilizados` mediumtext
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_resumen_entregas_mensual`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_resumen_entregas_mensual` (
+`ano` int(4)
+,`mes` int(2)
+,`id_repartidor` int(11)
+,`repartidor` varchar(200)
+,`entregas_mes` bigint(21)
+,`total_mes` decimal(32,2)
+,`promedio_entrega` decimal(14,6)
+);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura para la vista `vw_comprobantes_por_cliente`
 --
 DROP TABLE IF EXISTS `vw_comprobantes_por_cliente`;
@@ -962,6 +1256,24 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 DROP TABLE IF EXISTS `vw_comprobantes_resumen`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_comprobantes_resumen`  AS SELECT `comprobante_sunat`.`tipo` AS `tipo`, `comprobante_sunat`.`estado` AS `estado`, count(0) AS `cantidad`, sum(`comprobante_sunat`.`total`) AS `monto_total`, max(`comprobante_sunat`.`fecha_generacion`) AS `ultima_generacion` FROM `comprobante_sunat` GROUP BY `comprobante_sunat`.`tipo`, `comprobante_sunat`.`estado` ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_resumen_entregas_diario`
+--
+DROP TABLE IF EXISTS `vw_resumen_entregas_diario`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_resumen_entregas_diario`  AS SELECT cast(`edr`.`fecha_entrega` as date) AS `fecha`, `edr`.`id_repartidor` AS `id_repartidor`, `p`.`nombre_completo` AS `repartidor`, count(`edr`.`id_entrega`) AS `entregas_dia`, sum(`edr`.`total`) AS `total_dia`, group_concat(distinct `edr`.`metodo_entrega` order by `edr`.`metodo_entrega` ASC separator ',') AS `metodos_utilizados` FROM ((`entrega_dinero_repartidor` `edr` join `repartidor` `r` on(`edr`.`id_repartidor` = `r`.`id_repartidor`)) join `persona` `p` on(`r`.`id_persona` = `p`.`id_persona`)) WHERE `edr`.`estado` = 'completado' GROUP BY cast(`edr`.`fecha_entrega` as date), `edr`.`id_repartidor` ORDER BY cast(`edr`.`fecha_entrega` as date) DESC ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_resumen_entregas_mensual`
+--
+DROP TABLE IF EXISTS `vw_resumen_entregas_mensual`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_resumen_entregas_mensual`  AS SELECT year(`edr`.`fecha_entrega`) AS `ano`, month(`edr`.`fecha_entrega`) AS `mes`, `edr`.`id_repartidor` AS `id_repartidor`, `p`.`nombre_completo` AS `repartidor`, count(`edr`.`id_entrega`) AS `entregas_mes`, sum(`edr`.`total`) AS `total_mes`, avg(`edr`.`total`) AS `promedio_entrega` FROM ((`entrega_dinero_repartidor` `edr` join `repartidor` `r` on(`edr`.`id_repartidor` = `r`.`id_repartidor`)) join `persona` `p` on(`r`.`id_persona` = `p`.`id_persona`)) WHERE `edr`.`estado` = 'completado' GROUP BY year(`edr`.`fecha_entrega`), month(`edr`.`fecha_entrega`), `edr`.`id_repartidor` ORDER BY year(`edr`.`fecha_entrega`) DESC, month(`edr`.`fecha_entrega`) DESC ;
 
 --
 -- Índices para tablas volcadas
@@ -1009,6 +1321,23 @@ ALTER TABLE `departamento`
 ALTER TABLE `distrito`
   ADD PRIMARY KEY (`id_distrito`),
   ADD KEY `id_provincia` (`id_provincia`);
+
+--
+-- Indices de la tabla `entrega_dinero_repartidor`
+--
+ALTER TABLE `entrega_dinero_repartidor`
+  ADD PRIMARY KEY (`id_entrega`),
+  ADD KEY `id_usuario_registro` (`id_usuario_registro`),
+  ADD KEY `idx_repartidor_fecha` (`id_repartidor`,`fecha_entrega`),
+  ADD KEY `idx_fecha_estado` (`fecha_entrega`,`estado`);
+
+--
+-- Indices de la tabla `entrega_dinero_ventas`
+--
+ALTER TABLE `entrega_dinero_ventas`
+  ADD PRIMARY KEY (`id_asociacion`),
+  ADD KEY `idx_entrega_venta` (`id_entrega`,`id_venta`),
+  ADD KEY `idx_venta` (`id_venta`);
 
 --
 -- Indices de la tabla `errores_sunat`
@@ -1140,6 +1469,14 @@ ALTER TABLE `rol`
   ADD PRIMARY KEY (`id_rol`);
 
 --
+-- Indices de la tabla `sistema_bitacora`
+--
+ALTER TABLE `sistema_bitacora`
+  ADD PRIMARY KEY (`id_bitacora`),
+  ADD KEY `idx_modulo_fecha` (`modulo`,`fecha_registro`),
+  ADD KEY `idx_usuario_fecha` (`id_usuario`,`fecha_registro`);
+
+--
 -- Indices de la tabla `sunat_configuracion`
 --
 ALTER TABLE `sunat_configuracion`
@@ -1209,13 +1546,13 @@ ALTER TABLE `categorias`
 -- AUTO_INCREMENT de la tabla `cliente`
 --
 ALTER TABLE `cliente`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de la tabla `comprobante_sunat`
 --
 ALTER TABLE `comprobante_sunat`
-  MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `departamento`
@@ -1230,10 +1567,22 @@ ALTER TABLE `distrito`
   MODIFY `id_distrito` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `entrega_dinero_repartidor`
+--
+ALTER TABLE `entrega_dinero_repartidor`
+  MODIFY `id_entrega` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `entrega_dinero_ventas`
+--
+ALTER TABLE `entrega_dinero_ventas`
+  MODIFY `id_asociacion` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `errores_sunat`
 --
 ALTER TABLE `errores_sunat`
-  MODIFY `id_error` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_error` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `estado_pedido_proveedor`
@@ -1275,7 +1624,7 @@ ALTER TABLE `metodo_pago`
 -- AUTO_INCREMENT de la tabla `movimiento_stock`
 --
 ALTER TABLE `movimiento_stock`
-  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT de la tabla `pais`
@@ -1299,7 +1648,7 @@ ALTER TABLE `pedido_proveedor_detalle`
 -- AUTO_INCREMENT de la tabla `persona`
 --
 ALTER TABLE `persona`
-  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id_persona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -1332,6 +1681,12 @@ ALTER TABLE `rol`
   MODIFY `id_rol` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `sistema_bitacora`
+--
+ALTER TABLE `sistema_bitacora`
+  MODIFY `id_bitacora` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT de la tabla `sunat_configuracion`
 --
 ALTER TABLE `sunat_configuracion`
@@ -1347,25 +1702,25 @@ ALTER TABLE `tracking_ubicacion`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
-  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle`
 --
 ALTER TABLE `venta_detalle`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT de la tabla `venta_detalle_lote`
 --
 ALTER TABLE `venta_detalle_lote`
-  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id_venta_detalle_lote` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- Restricciones para tablas volcadas
@@ -1394,6 +1749,20 @@ ALTER TABLE `departamento`
 --
 ALTER TABLE `distrito`
   ADD CONSTRAINT `distrito_ibfk_1` FOREIGN KEY (`id_provincia`) REFERENCES `provincia` (`id_provincia`);
+
+--
+-- Filtros para la tabla `entrega_dinero_repartidor`
+--
+ALTER TABLE `entrega_dinero_repartidor`
+  ADD CONSTRAINT `entrega_dinero_repartidor_ibfk_1` FOREIGN KEY (`id_repartidor`) REFERENCES `repartidor` (`id_repartidor`) ON DELETE CASCADE,
+  ADD CONSTRAINT `entrega_dinero_repartidor_ibfk_2` FOREIGN KEY (`id_usuario_registro`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `entrega_dinero_ventas`
+--
+ALTER TABLE `entrega_dinero_ventas`
+  ADD CONSTRAINT `entrega_dinero_ventas_ibfk_1` FOREIGN KEY (`id_entrega`) REFERENCES `entrega_dinero_repartidor` (`id_entrega`) ON DELETE CASCADE,
+  ADD CONSTRAINT `entrega_dinero_ventas_ibfk_2` FOREIGN KEY (`id_venta`) REFERENCES `venta` (`id_venta`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `errores_sunat`
@@ -1455,6 +1824,12 @@ ALTER TABLE `provincia`
 --
 ALTER TABLE `repartidor`
   ADD CONSTRAINT `repartidor_ibfk_1` FOREIGN KEY (`id_persona`) REFERENCES `persona` (`id_persona`);
+
+--
+-- Filtros para la tabla `sistema_bitacora`
+--
+ALTER TABLE `sistema_bitacora`
+  ADD CONSTRAINT `sistema_bitacora_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `tracking_ubicacion`

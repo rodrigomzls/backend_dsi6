@@ -6,7 +6,10 @@ import {
     createVenta, 
     updateEstadoVenta,
     getVentasPorEstado,  // ✅ AGREGAR ESTA IMPORTACIÓN
-    asignarRepartidor    // ✅ AGREGAR ESTA IMPORTACIÓN
+    asignarRepartidor,
+    getEstadisticasVentas,
+    getResumenVentasPorDia
+        // ✅ AGREGAR ESTA IMPORTACIÓN
 } from '../controllers/venta.controller.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 
@@ -24,5 +27,7 @@ router.patch('/:id/estado', requireRole([1, 2], 'ventas'), updateEstadoVenta);
 // Rutas específicas
 router.get('/estado/:estadoId', requireRole([1, 2], 'ventas'), getVentasPorEstado);
 router.patch('/:id/asignar-repartidor', requireRole([1, 2], 'ventas_asignacion_rutas'), asignarRepartidor); // Usa módulo 'rutas'
-
+// En venta.routes.js - AGREGAR estas rutas nuevas
+router.get('/estadisticas/ventas', requireRole([1, 2], 'ventas'), getEstadisticasVentas);
+router.get('/estadisticas/resumen-dia', requireRole([1, 2], 'ventas'), getResumenVentasPorDia);
 export default router;

@@ -9,7 +9,7 @@ export const getVentas = async (req, res) => {
                 v.id_venta,
                 v.id_cliente,
                 DATE_FORMAT(v.fecha, '%Y-%m-%d') as fecha,
-                TIME(v.hora) as hora,
+                TIME_FORMAT(v.hora, '%H:%i:%s') as hora,
                 v.total,
                 v.id_metodo_pago,
                 v.id_estado_venta,
@@ -53,8 +53,8 @@ export const getVentaById = async (req, res) => {
             SELECT 
                 v.id_venta,
                 v.id_cliente,
-                DATE(v.fecha) as fecha,
-                TIME(v.hora) as hora,
+                DATE_FORMAT(v.fecha, '%Y-%m-%d') as fecha,
+                TIME_FORMAT(v.hora, '%H:%i:%s') as hora,
                 v.total,
                 v.id_metodo_pago,
                 v.id_estado_venta,
@@ -490,4 +490,91 @@ export const updateEstadoVenta = async (req, res) => {
         console.error('Error actualizando estado:', error);
         res.status(500).json({ error: error.message });
     }
+};
+// En venta.controller.js - AGREGAR estos métodos nuevos
+export const getEstadisticasVentas = async (req, res) => {
+  try {
+    const [estadisticasHoy] = await db.execute(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN v.id_estado_venta = 7 THEN v.total ELSE 0 END), 0) as total_hoy,
+        COUNT(CASE WHEN v.id_estado_venta = 7 THEN 1 END) as ventas_hoy,
+        DATE(v.fecha) as fecha
+      FROM venta v
+      WHERE DATE(v.fecha) = CURDATE()
+      GROUP BY DATE(v.fecha)
+    `);
+    
+    const [estadisticasMes] = await db.execute(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN v.id_estado_venta = 7 THEN v.total ELSE 0 END), 0) as total_mes,
+        COUNT(CASE WHEN v.id_estado_venta = 7 THEN 1 END) as ventas_mes
+      FROM venta v
+      WHERE YEAR(v.fecha) = YEAR(CURDATE()) 
+        AND MONTH(v.fecha) = MONTH(CURDATE())
+    `);
+    
+    const [estadisticasGeneral] = await db.execute(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN v.id_estado_venta = 7 THEN v.total ELSE 0 END), 0) as total_general,
+        COUNT(CASE WHEN v.id_estado_venta = 7 THEN 1 END) as ventas_general
+      FROM venta v
+    `);
+    
+    const [ventasPorMetodo] = await db.execute(`
+      SELECT 
+        mp.metodo_pago,
+        COUNT(v.id_venta) as cantidad,
+        COALESCE(SUM(v.total), 0) as total
+      FROM venta v
+      JOIN metodo_pago mp ON v.id_metodo_pago = mp.id_metodo_pago
+      WHERE v.id_estado_venta = 7
+        AND DATE(v.fecha) = CURDATE()
+      GROUP BY v.id_metodo_pago, mp.metodo_pago
+      ORDER BY total DESC
+    `);
+    
+    const totalHoy = estadisticasHoy[0]?.total_hoy || 0;
+    const ventasHoy = estadisticasHoy[0]?.ventas_hoy || 0;
+    
+    res.json({
+      totalHoy: parseFloat(totalHoy),
+      totalMes: parseFloat(estadisticasMes[0]?.total_mes || 0),
+      totalGeneral: parseFloat(estadisticasGeneral[0]?.total_general || 0),
+      ventasHoy: ventasHoy,
+      ventasMes: estadisticasMes[0]?.ventas_mes || 0,
+      promedioTicket: ventasHoy > 0 ? parseFloat(totalHoy) / ventasHoy : 0,
+      ventasPorMetodoPago: ventasPorMetodo.map(item => ({
+        metodo: item.metodo_pago,
+        cantidad: item.cantidad,
+        total: parseFloat(item.total)
+      }))
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getResumenVentasPorDia = async (req, res) => {
+  try {
+    const { fecha_inicio, fecha_fin } = req.query;
+    
+    const [resultado] = await db.execute(`
+      SELECT 
+        DATE(v.fecha) as fecha,
+        COUNT(v.id_venta) as cantidad_ventas,
+        COALESCE(SUM(CASE WHEN v.id_estado_venta = 7 THEN v.total ELSE 0 END), 0) as total_pagado,
+        COALESCE(SUM(CASE WHEN v.id_estado_venta = 8 THEN v.total ELSE 0 END), 0) as total_cancelado
+      FROM venta v
+      WHERE v.fecha BETWEEN ? AND ?
+      GROUP BY DATE(v.fecha)
+      ORDER BY fecha DESC
+    `, [fecha_inicio, fecha_fin]);
+    
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error obteniendo resumen por día:', error);
+    res.status(500).json({ error: error.message });
+  }
 };

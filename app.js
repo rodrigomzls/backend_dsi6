@@ -7,6 +7,10 @@ import indexRoutes from "./routes/index.js"; // centraliza rutas
   
 
 dotenv.config();
+// 🔧 CONFIGURAR ZONA HORARIA PARA TODO EL BACKEND
+process.env.TZ = 'America/Lima';
+console.log('⏰ Zona horaria del backend configurada a:', process.env.TZ);
+console.log('🕐 Hora actual backend:', new Date().toString());
 const app = express();
 
 app.use(cors());

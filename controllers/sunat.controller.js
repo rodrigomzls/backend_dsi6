@@ -23,77 +23,131 @@ class SunatController {
             });
         }
     }
-
-    async listarComprobantes(req, res) {
-        try {
-            const { 
-                tipo, estado, fecha_desde, fecha_hasta, 
-                pagina = 1, limite = 20, search
-            } = req.query;
-            
-            let query = `
-                SELECT cs.*, v.total, v.fecha, 
-                       c.razon_social, p.nombre_completo,
-                       CONCAT(cs.serie, '-', LPAD(cs.numero_secuencial, 8, '0')) as serie_numero
-                FROM comprobante_sunat cs
-                JOIN venta v ON cs.id_venta = v.id_venta
-                LEFT JOIN cliente c ON v.id_cliente = c.id_cliente
-                LEFT JOIN persona p ON c.id_persona = p.id_persona
-                WHERE 1=1
-            `;
-            
-            const params = [];
-            
-            if (tipo) { 
-                query += ' AND cs.tipo = ?'; 
-                params.push(tipo); 
-            }
-            if (estado) { 
-                query += ' AND cs.estado = ?'; 
-                params.push(estado); 
-            }
-            if (fecha_desde) { 
-                query += ' AND DATE(cs.fecha_envio) >= ?'; 
-                params.push(fecha_desde); 
-            }
-            if (fecha_hasta) { 
-                query += ' AND DATE(cs.fecha_envio) <= ?'; 
-                params.push(fecha_hasta); 
-            }
-            if (search) {
-                query += ' AND (c.razon_social LIKE ? OR p.nombre_completo LIKE ? OR cs.serie LIKE ?)';
-                const searchTerm = `%${search}%`;
-                params.push(searchTerm, searchTerm, searchTerm);
-            }
-            
-            // Contar total
-            const countQuery = query.replace('SELECT cs.*, v.total, c.razon_social, p.nombre_completo', 'SELECT COUNT(*) as total');
-            const [countResult] = await db.execute(countQuery, params);
-            const total = countResult[0]?.total || 0;
-            
-            // Paginación
-            query += ' ORDER BY cs.fecha_envio DESC LIMIT ? OFFSET ?';
-            const offset = (pagina - 1) * limite;
-            params.push(parseInt(limite), offset);
-            
-            const [comprobantes] = await db.execute(query, params);
-            
-            res.json({ 
-                success: true, 
-                total, 
+// backend_dsi6/controllers/sunat.controller.js
+async listarComprobantes(req, res) {
+    try {
+        const { 
+            tipo, estado, fecha_desde, fecha_hasta, 
+            pagina = 1, limite = 10, search
+        } = req.query;
+        
+        // IMPORTANTE: Hacer dos consultas separadas
+        // 1. Primero obtener los IDs de los comprobantes que cumplen los filtros
+        // 2. Luego contar SOLO esos registros
+        
+        let idsQuery = `
+            SELECT cs.id_comprobante
+            FROM comprobante_sunat cs
+            JOIN venta v ON cs.id_venta = v.id_venta
+            LEFT JOIN cliente c ON v.id_cliente = c.id_cliente
+            LEFT JOIN persona p ON c.id_persona = p.id_persona
+            WHERE 1=1
+        `;
+        
+        const params = [];
+        
+        // Aplicar filtros
+        if (tipo) { 
+            idsQuery += ' AND cs.tipo = ?'; 
+            params.push(tipo); 
+        }
+        if (estado) { 
+            idsQuery += ' AND cs.estado = ?'; 
+            params.push(estado); 
+        }
+        if (fecha_desde) { 
+            idsQuery += ' AND DATE(cs.fecha_envio) >= ?'; 
+            params.push(fecha_desde); 
+        }
+        if (fecha_hasta) { 
+            idsQuery += ' AND DATE(cs.fecha_envio) <= ?'; 
+            params.push(fecha_hasta); 
+        }
+        if (search) {
+            idsQuery += ' AND (c.razon_social LIKE ? OR p.nombre_completo LIKE ? OR cs.serie LIKE ? OR cs.numero_secuencial LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        }
+        
+        // Contar total de IDs filtrados
+        const countQuery = `SELECT COUNT(*) as total FROM (${idsQuery}) as filtered_ids`;
+        const [countResult] = await db.execute(countQuery, params);
+        const total = countResult[0]?.total || 0;
+        
+        // Aplicar paginación a la consulta de IDs
+        const offset = (parseInt(pagina) - 1) * parseInt(limite);
+        idsQuery += ' ORDER BY cs.fecha_envio DESC LIMIT ? OFFSET ?';
+        params.push(parseInt(limite), offset);
+        
+        const [idsRows] = await db.execute(idsQuery, params);
+        const ids = idsRows.map(row => row.id_comprobante);
+        
+        // Si no hay IDs, devolver array vacío
+        if (ids.length === 0) {
+            return res.json({
+                success: true,
+                total: 0,
                 pagina: parseInt(pagina),
                 limite: parseInt(limite),
-                comprobantes 
-            });
-            
-        } catch (error) {
-            console.error('❌ Error en listarComprobantes:', error);
-            res.status(500).json({ 
-                success: false,
-                error: error.message 
+                comprobantes: []
             });
         }
+        
+        // Ahora obtener los datos completos de esos IDs específicos
+        const dataQuery = `
+            SELECT 
+                cs.*, 
+                v.total, 
+                v.fecha,
+                c.razon_social, 
+                p.nombre_completo,
+                p.numero_documento,
+                p.tipo_documento,
+                CASE 
+                    WHEN p.tipo_documento = 'RUC' THEN p.numero_documento
+                    ELSE NULL
+                END as cliente_ruc,
+                CASE 
+                    WHEN p.tipo_documento = 'DNI' THEN p.numero_documento
+                    ELSE NULL
+                END as cliente_dni,
+                CONCAT(cs.serie, '-', LPAD(cs.numero_secuencial, 8, '0')) as serie_numero
+            FROM comprobante_sunat cs
+            JOIN venta v ON cs.id_venta = v.id_venta
+            LEFT JOIN cliente c ON v.id_cliente = c.id_cliente
+            LEFT JOIN persona p ON c.id_persona = p.id_persona
+            WHERE cs.id_comprobante IN (${ids.map(() => '?').join(',')})
+            ORDER BY cs.fecha_envio DESC
+        `;
+        
+        const [comprobantes] = await db.execute(dataQuery, ids);
+        
+        // Procesar comprobantes
+        const comprobantesProcesados = comprobantes.map(comp => ({
+            ...comp,
+            cliente_ruc: comp.cliente_ruc || comp.ruc_cliente || null,
+            cliente_dni: comp.cliente_dni || comp.dni_cliente || null,
+            igv: comp.total ? Number((comp.total * 0.18).toFixed(2)) : 0
+        }));
+        
+        console.log(`📊 Total real: ${total}, Registros devueltos: ${comprobantesProcesados.length}`);
+        
+        res.json({ 
+            success: true, 
+            total, 
+            pagina: parseInt(pagina),
+            limite: parseInt(limite),
+            comprobantes: comprobantesProcesados
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en listarComprobantes:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+        });
     }
+}
 
     async obtenerXml(req, res) {
         try {

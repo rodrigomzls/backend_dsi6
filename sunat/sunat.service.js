@@ -198,16 +198,26 @@ async guardarComprobanteBD(connection, idVenta, venta, resultadoPHP) {
     console.log(`📊 Número calculado: ${siguienteNumero}, PHP envió: ${comprobante.correlativo}`);
 
     // ✅ SINCRONIZAR LA RESPUESTA DEL PHP CON NUESTRO NÚMERO
-    // Esto asegura que el frontend vea lo mismo que guardamos
     resultadoPHP.comprobante.correlativo = siguienteNumero.toString().padStart(8, '0');
     resultadoPHP.comprobante.nombre = `${comprobante.serie}-${resultadoPHP.comprobante.correlativo}`;
+
+    // ✅ DETERMINAR RUC Y DNI SEGÚN TIPO DE DOCUMENTO
+    let rucCliente = null;
+    let dniCliente = null;
+    
+    if (venta.tipo_documento === 'RUC') {
+        rucCliente = venta.numero_documento;
+    } else if (venta.tipo_documento === 'DNI') {
+        dniCliente = venta.numero_documento;
+    }
 
     const [result] = await connection.execute(`
         INSERT INTO comprobante_sunat 
         (id_venta, tipo, serie, numero_secuencial, estado,
          xml_generado, respuesta_sunat, total,
-         cliente_nombre, fecha_envio, intentos_envio)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 1)
+         cliente_nombre, fecha_envio, intentos_envio,
+         ruc_cliente, dni_cliente)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 1, ?, ?)
     `, [
         idVenta,
         comprobante.tipo,
@@ -217,7 +227,9 @@ async guardarComprobanteBD(connection, idVenta, venta, resultadoPHP) {
         xmlContent,
         JSON.stringify(sunat),
         venta.total,
-        venta.razon_social || venta.nombre_completo || 'Cliente'
+        venta.razon_social || venta.nombre_completo || 'Cliente',
+        rucCliente,
+        dniCliente
     ]);
 
     return {
@@ -225,11 +237,12 @@ async guardarComprobanteBD(connection, idVenta, venta, resultadoPHP) {
         tipo: comprobante.tipo,
         serie: comprobante.serie,
         numero_secuencial: siguienteNumero,
-        correlativo: resultadoPHP.comprobante.correlativo, // ← Incluir correlativo formateado
-        estado: sunat.estado
+        correlativo: resultadoPHP.comprobante.correlativo,
+        estado: sunat.estado,
+        ruc_cliente: rucCliente,
+        dni_cliente: dniCliente
     };
 }
-
     async registrarError(idVenta, mensajeError) {
         try {
             await db.execute(

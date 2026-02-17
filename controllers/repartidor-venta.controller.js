@@ -254,7 +254,7 @@ export const getHistorialEntregas = async (req, res) => {
                 p_cliente.direccion,
                 p_cliente.coordenadas,
                 c.razon_social,
-                v.id_metodo_pago,  -- ✅ AGREGAR ESTE CAMPO
+                v.id_metodo_pago,
                 mp.metodo_pago,
                 v.notas,
                 v.fecha_creacion
@@ -311,10 +311,10 @@ export const getVentaDetalleAsignada = async (req, res) => {
                 v.notas,
                 v.fecha_creacion,
                 v.fecha_actualizacion,
-                v.fecha_inicio_ruta,  -- ✅ NUEVO: Agregar este campo
-                v.fecha_fin_ruta,     -- ✅ NUEVO: Agregar este campo
-                v.ubicacion_inicio_ruta, -- ✅ NUEVO: Agregar este campo
-                v.tracking_activo,    -- ✅ NUEVO: Agregar este campo
+                v.fecha_inicio_ruta,  
+                v.fecha_fin_ruta,     
+                v.ubicacion_inicio_ruta, 
+                v.tracking_activo,   
                 c.razon_social, 
                 p_cliente.telefono,
                 p_cliente.direccion,
@@ -365,13 +365,6 @@ export const getVentaDetalleAsignada = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-// src/controllers/repartidor-venta.controller.js
-
-
-// En repartidor-venta.controller.js - OPTIMIZAR updateEstadoVentaRepartidor
-// Nuevo endpoint para verificar si puede marcar como pagado
-// Agrega este nuevo método al controlador
-// src/controllers/repartidor-venta.controller.js
 
 // Nuevo endpoint para verificar si puede marcar como pagado
 export const verificarPuedeMarcarPagado = async (req, res) => {
@@ -448,7 +441,6 @@ export const verificarPuedeMarcarPagado = async (req, res) => {
     }
 };
 
-// Actualiza el método existente updateEstadoVentaRepartidor para ser más restrictivo
 // Controlador mejorado y más restrictivo para marcar como pagado
 export const updateEstadoVentaRepartidor = async (req, res) => {
     let connection;
@@ -526,7 +518,6 @@ export const updateEstadoVentaRepartidor = async (req, res) => {
         }
     }
 };
-// Marcar entrega como cancelada (solo para repartidor)
 // En repartidor-venta.controller.js - ACTUALIZAR cancelarEntregaRepartidor
 export const cancelarEntregaRepartidor = async (req, res) => {
     try {

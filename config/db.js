@@ -1,10 +1,10 @@
+// src/config/db.js - VERSIÓN CORREGIDA
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
-// Carga las variables del archivo .env
 dotenv.config();
 
-// Crear pool de conexiones
+// FORZAR ZONA HORIA AMÉRICA/LIMA EN TODO EL POOL
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -13,14 +13,35 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: '-05:00', // Zona horaria de Perú
-  charset: 'utf8mb4'
+  timezone: 'SYSTEM', // Usar la del sistema
+  charset: 'utf8mb4',
+  dateStrings: true,
+  // Agregar opción para manejar fechas consistentemente
+  typeCast: function (field, next) {
+    if (field.type === 'DATE') {
+      return field.string();
+    }
+    if (field.type === 'DATETIME' || field.type === 'TIMESTAMP') {
+      return field.string();
+    }
+    return next();
+  }
 });
-// Ejecutar SET time_zone al inicializar conexiones
+
+// Configurar zona horaria explícita para cada conexión
 db.on('connection', (connection) => {
   connection.query("SET time_zone = '-05:00'");
+  connection.query("SET @@session.time_zone = '-05:00'");
 });
 
+// Test de conexión con hora
+db.getConnection().then(conn => {
+  conn.query("SELECT NOW() as ahora, @@session.time_zone as tz").then(([rows]) => {
+    console.log('🕐 MySQL Configurado:', rows[0]);
+    conn.release();
+  }).catch(err => {
+    console.error('Error test MySQL:', err);
+  });
+});
 
-// Exportación del pool
 export default db;

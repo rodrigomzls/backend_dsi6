@@ -48,4 +48,5 @@ router.use("/inventario", inventarioRoutes); // ✅ NUEVA RUTA AÑADIDA
 router.use("/insumos", insumoRoutes); // ✅ NUEVA RUTA AÑADIDA
 router.use("/sunat", sunatRoutes); // ✅ NUEVA RUTA SUNAT
 router.use("/entregas-dinero", entregaDineroRoutes); // ✅ NUEVA RUTA AGREGADA
+
 export default router;

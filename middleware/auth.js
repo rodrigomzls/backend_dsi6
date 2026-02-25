@@ -61,7 +61,7 @@ export const requireRole = (roles, modulo) => {
         1: [ // Administrador
             'usuarios', 'personas', 'clientes', 'productos', 'ventas', 
             'rutas', 'inventario', 'reportes','ventas_asignacion_rutas', 'repartidores',
-            'inventario_movimiento','inventario_reportes', 'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas','sunat'
+            'inventario_movimiento','inventario_reportes', 'lotes', 'proveedores', 'pedido_proveedor', 'categorias', 'marcas','sunat','empresa','insumos'
         ],
         2: [ // Vendedor
             //  

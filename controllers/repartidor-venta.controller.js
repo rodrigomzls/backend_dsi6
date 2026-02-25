@@ -520,9 +520,12 @@ export const updateEstadoVentaRepartidor = async (req, res) => {
 };
 // En repartidor-venta.controller.js - ACTUALIZAR cancelarEntregaRepartidor
 export const cancelarEntregaRepartidor = async (req, res) => {
+    const connection = await db.getConnection();
     try {
+        await connection.beginTransaction();
+
         // Obtener el id_repartidor del usuario actual
-        const [repartidores] = await db.execute(`
+        const [repartidores] = await connection.execute(`
             SELECT r.id_repartidor 
             FROM repartidor r
             JOIN usuario u ON r.id_persona = u.id_persona
@@ -530,62 +533,68 @@ export const cancelarEntregaRepartidor = async (req, res) => {
         `, [req.user.id_usuario]);
 
         if (repartidores.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ error: 'Repartidor no encontrado para este usuario' });
         }
 
         const repartidorId = repartidores[0].id_repartidor;
         const { id } = req.params;
         const { motivo } = req.body;
+        const id_usuario = req.user.id_usuario;
 
-        console.log(`🔄 Repartidor ${repartidorId} cancelando venta ${id}`);
+        console.log(`🔄 Repartidor ${repartidorId} cancelando venta ${id} con restauración de stock`);
 
         if (!motivo) {
+            await connection.rollback();
             return res.status(400).json({ error: 'El motivo de cancelación es requerido' });
         }
 
-        // Verificar que la venta está asignada a este repartidor y en estado "En ruta"
-        const [ventas] = await db.execute(`
-            SELECT id_venta, id_estado_venta, fecha_inicio_ruta
+        // Verificar que la venta está asignada a este repartidor
+        const [ventas] = await connection.execute(`
+            SELECT id_venta, id_estado_venta
             FROM venta 
-            WHERE id_venta = ? AND id_repartidor = ? AND id_estado_venta = 5
+            WHERE id_venta = ? AND id_repartidor = ?
         `, [id, repartidorId]);
 
         if (ventas.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ 
-                error: 'Venta no encontrada, no asignada a este repartidor o no está en estado "En ruta"' 
+                error: 'Venta no encontrada o no asignada a este repartidor' 
             });
         }
 
-        // ✅ NUEVO: Registrar fecha de fin de ruta si la ruta fue iniciada
-        const fechaFinRuta = ventas[0].fecha_inicio_ruta ? 'NOW()' : 'NULL';
+        // Importar la función utilitaria
+        const { cancelarVentaConStock } = await import('../utils/venta-cancelacion.utils.js');
+        
+        // Ejecutar cancelación con restauración de stock
+        const resultado = await cancelarVentaConStock(
+            id, 
+            id_usuario, 
+            `CANCELACIÓN REPARTIDOR: ${motivo}`, 
+            connection
+        );
 
-        // Actualizar estado a "Cancelado" (8), agregar motivo y registrar fin de ruta
-        const [result] = await db.execute(`
-            UPDATE venta 
-            SET id_estado_venta = 8, 
-                notas = CONCAT(COALESCE(notas, ''), ' CANCELACIÓN REPARTIDOR: ', ?), 
-                fecha_fin_ruta = ${fechaFinRuta},
-                tracking_activo = FALSE,
-                fecha_actualizacion = NOW()
-            WHERE id_venta = ? AND id_repartidor = ?
-        `, [motivo, id, repartidorId]);
+        await connection.commit();
 
-        if (result.affectedRows === 0) {
-            return res.status(400).json({ error: 'No se pudo cancelar la venta' });
-        }
-
-        console.log(`✅ Venta ${id} cancelada por repartidor ${repartidorId}`);
+        console.log(`✅ Venta ${id} cancelada por repartidor ${repartidorId} con restauración de stock`);
+        
         res.json({ 
-            message: 'Venta cancelada correctamente',
-            id_estado_venta: 8,
-            estado: 'Cancelado',
-            fecha_fin_ruta: fechaFinRuta !== 'NULL' ? new Date() : null
+            success: true,
+            message: 'Venta cancelada y stock restaurado correctamente',
+            id_venta: parseInt(id),
+            lotes_restaurados: resultado.lotes_restaurados
         });
+
     } catch (error) {
+        await connection.rollback();
         console.error('Error cancelando venta:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+        });
+    } finally {
+        connection.release();
     }
-    
 };
 
 // src/controllers/repartidor-venta.controller.js - AGREGAR ESTE MÉTODO

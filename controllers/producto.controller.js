@@ -14,7 +14,6 @@ export const getProductos = async (req, res) => {
       stock: producto.stock,
       categoriaId: producto.id_categoria ,  // ← Cambiado de categoriaId a categoria_id
       marcaId: producto.id_marca,          // ← Cambiado de marcaId a marca_id  
-      proveedorId: producto.id_proveedor,  // ← Cambiado de proveedorId a proveedor_id
       paisOrigenId: producto.id_pais_origen // ← Cambiado de paisOrigenId a pais_origen_id
     }));
     
@@ -42,7 +41,6 @@ export const getProductoById = async (req, res) => {
       stock: producto.stock,
       categoriaId: producto.id_categoria ,
       marcaId: producto.id_marca,
-      proveedorId: producto.id_proveedor,
       paisOrigenId: producto.id_pais_origen
     };
     
@@ -56,11 +54,25 @@ export const getProductoById = async (req, res) => {
 // Agregar producto nuevo
 export const createProducto = async (req, res) => {
   try {
-    const { nombre, descripcion, precio, stock, categoriaId, marcaId, proveedorId, paisOrigenId } = req.body;
+    // ✅ Eliminamos proveedorId del destructuring
+    const { 
+      nombre, 
+      descripcion, 
+      precio, 
+      categoriaId, 
+      marcaId, 
+      paisOrigenId,
+      presentacion,
+      volumen 
+    } = req.body;
     
+    const stock = 0; // Siempre 0 al crear
+
     const [result] = await db.query(
-      "INSERT INTO producto (nombre, descripcion, precio, stock, id_categoria , id_marca, id_proveedor , id_pais_origen ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [nombre, descripcion, precio, stock, categoriaId, marcaId, proveedorId, paisOrigenId]
+      `INSERT INTO producto 
+       (nombre, descripcion, precio, stock, id_categoria, id_marca, id_pais_origen, presentacion, volumen) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nombre, descripcion, precio, stock, categoriaId, marcaId, paisOrigenId, presentacion, volumen]
     );
     
     res.status(201).json({ 
@@ -77,11 +89,11 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, precio, stock, categoriaId, marcaId, proveedorId, paisOrigenId } = req.body;
+    const { nombre, descripcion, precio, stock, categoriaId, marcaId,  paisOrigenId } = req.body;
 
     const [result] = await db.query(
       "UPDATE producto SET nombre = ?, descripcion = ?, precio = ?, stock = ?,id_categoria= ?, id_marca= ?, id_proveedor  = ?, id_pais_origen = ? WHERE id_producto = ?",
-      [nombre, descripcion, precio, stock, categoriaId, marcaId, proveedorId, paisOrigenId, id]
+      [nombre, descripcion, precio, stock, categoriaId, marcaId, paisOrigenId, id]
     );
 
     if (result.affectedRows === 0)

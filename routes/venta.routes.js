@@ -8,7 +8,8 @@ import {
     getVentasPorEstado,  // ✅ AGREGAR ESTA IMPORTACIÓN
     asignarRepartidor,
     getEstadisticasVentas,
-    getResumenVentasPorDia
+    getResumenVentasPorDia,
+      cancelarVentaConStock
         // ✅ AGREGAR ESTA IMPORTACIÓN
 } from '../controllers/venta.controller.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
@@ -30,4 +31,8 @@ router.patch('/:id/asignar-repartidor', requireRole([1, 2], 'ventas_asignacion_r
 // En venta.routes.js - AGREGAR estas rutas nuevas
 router.get('/estadisticas/ventas', requireRole([1, 2], 'ventas'), getEstadisticasVentas);
 router.get('/estadisticas/resumen-dia', requireRole([1, 2], 'ventas'), getResumenVentasPorDia);
+router.post('/:id/cancelar-con-stock', 
+    requireRole([1, 2], 'ventas'), 
+    cancelarVentaConStock
+);
 export default router;

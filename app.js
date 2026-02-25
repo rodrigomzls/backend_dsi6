@@ -3,34 +3,37 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import db from "./config/db.js";
-import indexRoutes from "./routes/index.js"; // centraliza rutas
-  
+import indexRoutes from "./routes/index.js";
+import paths from './config/paths.js'; // ✅ Importar configuración de rutas
 
 dotenv.config();
-// 🔧 CONFIGURAR ZONA HORARIA PARA TODO EL BACKEND
+
+// Configurar zona horaria
 process.env.TZ = 'America/Lima';
-console.log('⏰ Zona horaria del backend configurada a:', process.env.TZ);
-console.log('🕐 Hora actual backend:', new Date().toString());
+console.log('⏰ Zona horaria del backend:', process.env.TZ);
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// rutas
+// ✅ SERVIR ARCHIVOS ESTÁTICOS USANDO RUTAS RELATIVAS
+console.log('📁 Sirviendo archivos estáticos desde:', paths.frontend.assets);
+app.use(paths.urls.assets, express.static(paths.frontend.assets));
+
+// Rutas
 app.use("/api", indexRoutes);
 
-// prueba básica
+// Ruta de prueba
 app.get("/", (req, res) => res.send("Backend DSI6 funcionando"));
 
-
-// arrancar y test DB al inicio
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, async () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT} 🥵`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
   try {
     const [rows] = await db.query("SELECT 1+1 AS result");
-    console.log("Conexión a DB OK");
+    console.log("✅ Conexión a DB OK");
   } catch (err) {
-    console.error("Error conectando a la DB x.X", err.message);
+    console.error("❌ Error conectando a la DB:", err.message);
   }
 });

@@ -4,6 +4,10 @@ import db from '../config/db.js';
 // ============================================
 // GET VENTAS - Listar todas las ventas
 // ============================================
+// src/controllers/venta.controller.js - CORREGIR getVentas
+
+// src/controllers/venta.controller.js - MEJORAR getVentas
+
 export const getVentas = async (req, res) => {
     try {
         const [ventas] = await db.execute(`
@@ -22,6 +26,9 @@ export const getVentas = async (req, res) => {
                 v.fecha_actualizacion,
                 v.tipo_comprobante_solicitado,
                 c.razon_social, 
+                c.tipo_cliente,
+                p_cliente.tipo_documento,
+                p_cliente.numero_documento,
                 p_cliente.telefono,
                 p_cliente.direccion,
                 p_cliente.nombre_completo,
@@ -40,8 +47,28 @@ export const getVentas = async (req, res) => {
             ORDER BY v.fecha_creacion DESC
         `);
         
-        console.log('📊 Ventas obtenidas:', ventas.length);
-        res.json(ventas);
+        // Para cada venta, buscar su comprobante en comprobante_sunat
+        const ventasConComprobante = await Promise.all(ventas.map(async (venta) => {
+            const [comprobante] = await db.execute(`
+                SELECT serie, numero_secuencial
+                FROM comprobante_sunat
+                WHERE id_venta = ?
+                LIMIT 1
+            `, [venta.id_venta]);
+            
+            if (comprobante.length > 0) {
+                venta.serie_comprobante = comprobante[0].serie;
+                venta.numero_correlativo = comprobante[0].numero_secuencial;
+            } else {
+                venta.serie_comprobante = null;
+                venta.numero_correlativo = null;
+            }
+            
+            return venta;
+        }));
+        
+        console.log('📊 Ventas obtenidas:', ventasConComprobante.length);
+        res.json(ventasConComprobante);
     } catch (error) {
         console.error('❌ Error en getVentas:', error);
         res.status(500).json({ error: error.message });
@@ -51,9 +78,13 @@ export const getVentas = async (req, res) => {
 // ============================================
 // GET VENTA BY ID - Obtener venta específica
 // ============================================
+// src/controllers/venta.controller.js - CORREGIR getVentaById
+
 export const getVentaById = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        // Modificar la consulta para NO incluir serie_comprobante y numero_correlativo
         const [ventas] = await db.execute(`
             SELECT 
                 v.id_venta,
@@ -70,6 +101,9 @@ export const getVentaById = async (req, res) => {
                 v.fecha_actualizacion,
                 v.tipo_comprobante_solicitado,
                 c.razon_social, 
+                c.tipo_cliente,
+                p_cliente.tipo_documento,
+                p_cliente.numero_documento,
                 p_cliente.telefono,
                 p_cliente.direccion,
                 p_cliente.nombre_completo,
@@ -101,11 +135,29 @@ export const getVentaById = async (req, res) => {
 
         const venta = ventas[0];
         
+        // Buscar en comprobante_sunat si existe un comprobante emitido para esta venta
+        const [comprobanteSunat] = await db.execute(`
+            SELECT serie, numero_secuencial
+            FROM comprobante_sunat
+            WHERE id_venta = ?
+            LIMIT 1
+        `, [id]);
+
+        // Asignar los valores de comprobante_sunat a la venta
+        if (comprobanteSunat.length > 0) {
+            venta.serie_comprobante = comprobanteSunat[0].serie;
+            venta.numero_correlativo = comprobanteSunat[0].numero_secuencial;
+        } else {
+            venta.serie_comprobante = null;
+            venta.numero_correlativo = null;
+        }
+        
         res.json({
             ...venta,
             detalles
         });
     } catch (error) {
+        console.error('❌ Error en getVentaById:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -714,5 +766,69 @@ export const getResumenVentasPorDia = async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo resumen por día:', error);
         res.status(500).json({ error: error.message });
+    }
+};
+export const cancelarVentaConStock = async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const { id } = req.params;
+        const { motivo } = req.body;
+        const id_usuario = req.user.id_usuario;
+
+        console.log(`🔄 Iniciando cancelación de venta #${id} con restauración de stock...`);
+
+        // Verificar que la venta existe y está en estado válido para cancelar
+        const [ventas] = await connection.execute(`
+            SELECT id_venta, id_estado_venta, total
+            FROM venta 
+            WHERE id_venta = ?
+        `, [id]);
+
+        if (ventas.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Venta no encontrada' });
+        }
+
+        const venta = ventas[0];
+        
+        // No permitir cancelar ventas ya canceladas o pagadas
+        if (venta.id_estado_venta === 8) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'La venta ya está cancelada' });
+        }
+
+        if (venta.id_estado_venta === 7) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'No se puede cancelar una venta pagada' });
+        }
+
+        // Importar la función utilitaria
+        const { cancelarVentaConStock } = await import('../utils/venta-cancelacion.utils.js');
+        
+        // Ejecutar cancelación con restauración de stock
+        const resultado = await cancelarVentaConStock(id, id_usuario, motivo || 'Cancelación manual', connection);
+
+        await connection.commit();
+
+        console.log(`✅ Venta #${id} cancelada exitosamente con restauración de stock`);
+        
+        res.json({
+            success: true,
+            message: resultado.message,
+            id_venta: parseInt(id),
+            lotes_restaurados: resultado.lotes_restaurados
+        });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('❌ Error cancelando venta:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+        });
+    } finally {
+        connection.release();
     }
 };

@@ -20,6 +20,7 @@ import inventarioRoutes from "./inventario.routes.js"; // ✅ NUEVA RUTA AÑADID
 import insumoRoutes from "./insumo.routes.js";
 import sunatRoutes from "./sunat.routes.js"; // ✅ NUEVA IMPORTACIÓN
 import entregaDineroRoutes from "./entrega-dinero.routes.js"; // ✅ NUEVA RUTA
+import empresaRoutes from "./empresa.routes.js";
 const router = express.Router();
 
 // Rutas públicas (sin autenticación)
@@ -48,5 +49,5 @@ router.use("/inventario", inventarioRoutes); // ✅ NUEVA RUTA AÑADIDA
 router.use("/insumos", insumoRoutes); // ✅ NUEVA RUTA AÑADIDA
 router.use("/sunat", sunatRoutes); // ✅ NUEVA RUTA SUNAT
 router.use("/entregas-dinero", entregaDineroRoutes); // ✅ NUEVA RUTA AGREGADA
-
+router.use("/empresa", empresaRoutes);
 export default router;
